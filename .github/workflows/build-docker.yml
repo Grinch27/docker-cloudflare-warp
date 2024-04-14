@@ -286,6 +286,9 @@ jobs:
           sudo mount /dev/github/runner ${path_build}
           sudo chown -R runner.runner ${path_build}
 
+          # 创建基本工作目录 path_workspace
+          mkdir -p ${path_workspace}
+
           df -Th
           echo "status=success" >> ${GITHUB_OUTPUT}
 
