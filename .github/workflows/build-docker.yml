@@ -286,10 +286,20 @@ jobs:
           sudo mount /dev/github/runner ${path_build}
           sudo chown -R runner.runner ${path_build}
 
+          df -Th
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Setup workspace
+        id: workspace
+        working-directory: /
+        if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
           # 创建基本工作目录 path_workspace
           mkdir -p ${path_workspace}
 
-          df -Th
+          df -hT ${PWD}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Clone DIY
@@ -326,7 +336,7 @@ jobs:
           APT_OS_VER: "bookworm"
           APT_SLIM: "true"
           APT_PACKAGES: "curl gpg man expect iproute2 jq iptables iputils-ping"
-          APP_PLATFORM: "aarch64"
+          # APP_PLATFORM: "arm64"
         run: |
           echo -e "Current working directory: $(pwd)"
 
@@ -335,7 +345,7 @@ jobs:
           TAG="latest"
 
           # 定义一个数组来存储 build_image 的参数和 tag
-          declare -A platforms=( ["linux/amd64"]="amd64" ["linux/arm64"]="aarch64" )
+          declare -A platforms=( ["linux/amd64"]="amd64" ["linux/arm64"]="arm64" )
 
           build_image() {
               local platform=$1
