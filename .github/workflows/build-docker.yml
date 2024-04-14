@@ -292,7 +292,7 @@ jobs:
       - name: Setup workspace
         id: workspace
         working-directory: /
-        if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        # if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
 
@@ -305,7 +305,7 @@ jobs:
       - name: Clone DIY
         id: clonediy
         working-directory: ${{ env.path_workspace }}
-        if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        # if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
 
