@@ -33,7 +33,7 @@ RUN apt-get update --ignore-missing \
     && apt-get install -y --no-install-recommends --fix-missing gpg \
     && curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg \
     # Add this repo to your apt-get repositories
-    && echo "deb [arch=${APP_PLATFORM} signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ focal main" > /etc/apt/sources.list.d/cloudflare-client.list \
+    && echo "deb [arch=${APP_PLATFORM} signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ Jammy main" > /etc/apt/sources.list.d/cloudflare-client.list \
     # Install
     && apt-get update  \
     # && apt-get install -y --no-install-recommends --fix-missing cloudflare-warp \
