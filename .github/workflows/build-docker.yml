@@ -127,11 +127,11 @@ jobs:
         run: |
           echo -e "Current working directory: $(pwd)"
           # 更新 Ubuntu 的软件包列表
-          sudo -E apt -y -qq update
+          sudo -E apt-get -y -qq update
           # 删除指定的软件包及其配置文件。如果删除失败，则忽略错误
-          sudo -E apt -y -qq purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
+          sudo -E apt-get -y -qq purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
           # 安装编译Openwrt所需依赖软件包
-          sudo -E apt -y -qq install \
+          sudo -E apt-get -y -qq install \
           ack \
           antlr3 \
           asciidoc \
@@ -207,10 +207,10 @@ jobs:
           zlib1g-dev \
           libdb++-dev
           # 安装arm-gcc工具链软件包
-          sudo -E apt -y -qq install gcc-aarch64-linux-gnu build-essential flex bison libssl-dev
-          # 删除所有不再需要的软件包及其配置文件, 清理 apt 的缓存
-          sudo -E apt -qq -y autoremove --purge
-          sudo -E apt -qq clean
+          sudo -E apt-get -y -qq install gcc-aarch64-linux-gnu build-essential flex bison libssl-dev
+          # 删除所有不再需要的软件包及其配置文件, 清理 apt-get 的缓存
+          sudo -E apt-get -qq -y autoremove --purge
+          sudo -E apt-get -qq clean
           # 设置系统的时区为环境变量 TZ 指定的值
           sudo timedatectl set-timezone "${TZ}"
           # 重新加载 systemd 的配置
@@ -229,22 +229,23 @@ jobs:
           # uninstall all conflicting packages
           for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get -y remove $pkg; done
 
-          # 1. Set up Docker's apt repository.
+          # 1. Set up Docker's apt-get repository.
           # Add Docker's official GPG key:
-          sudo -E apt -y -qq update
-          sudo -E apt -y -qq install ca-certificates curl gnupg lsb-release
+          sudo -E apt-get -y -qq update
+          sudo -E apt-get -y -qq install ca-certificates curl gnupg lsb-release
           sudo install -m 0755 -d /etc/apt/keyrings
           sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
           sudo chmod a+r /etc/apt/keyrings/docker.asc
-          # Add the repository to Apt sources:
+          # Add the repository to apt-get sources:
+          sudo mkdir -p /etc/apt/sources.list.d/
           echo \
             "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
             $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
             sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          sudo -E apt -y -qq update
+          sudo -E apt-get -y -qq update
 
           # 2. Install the Docker packages.(Latest)
-          sudo -E apt -y -qq install \
+          sudo -E apt-get -y -qq install \
           docker-ce \
           docker-ce-cli \
           containerd.io \
@@ -254,8 +255,8 @@ jobs:
           # sudo service docker start
 
           # 清理apt
-          sudo -E apt -qq -y autoremove --purge
-          sudo -E apt -qq clean
+          sudo -E apt-get -qq -y autoremove --purge
+          sudo -E apt-get -qq clean
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Create simulated physical disk
