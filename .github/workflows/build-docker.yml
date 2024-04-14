@@ -356,14 +356,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            BASEIMAGE_OS="debian:bookworm"
-            BASEIMAGE_VER="slim"
-            HUB_REPO="grinch27/warp"
-            APT_SRC="deb.debian.org"
-            APT_OS_VER="bookworm"
+            BASEIMAGE_OS=debian:bookworm
+            BASEIMAGE_VER=slim
+            HUB_REPO=grinch27/warp
+            APT_SRC=deb.debian.org
+            APT_OS_VER=bookworm
             APT_PACKAGES="curl gpg man expect iproute2 jq iptables iputils-ping systemctl"
-            APP_PLATFORM="arm64"
-
+            APP_PLATFORM=arm64
       # - name: Build Docker Image
       #   id: build
       #   working-directory: ${{ env.path_workspace }}
