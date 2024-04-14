@@ -201,7 +201,7 @@ jobs:
         with:
           context: .
           file: ${{ env.path_diy }}/Dockerfile
-          no-cache: true
+          no-cache: false
           platforms: linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
