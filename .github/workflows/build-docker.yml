@@ -1,0 +1,385 @@
+name: Build Docker
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      tools_branch:
+        description: "Select openwrt branch"
+        required: true
+        default: "warp"
+        type: choice
+        options:
+          - warp
+      device_branch:
+        description: "Select device branch"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+
+env:
+  TZ: America/New_York
+  tools_branch: ${{ inputs.tools_branch }}
+  # device_branch: ${{ inputs.device_branch }}
+
+jobs:
+  build:
+    name: Build Docker
+    runs-on: ubuntu-22.04
+    if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set environment variable (${{ inputs.tools_branch }})
+        id: var
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          # ========== Set repo branch ==========
+          repo_diy="https://github.com/$GITHUB_REPOSITORY"
+          repo_diy_owner="$GITHUB_REPOSITORY_OWNER"
+
+          # repo_target="https://github.com/hanwckf/bl-mt798x"
+          # repo_target_branch="master"
+
+          echo "repo_diy=${repo_diy}" >> "$GITHUB_ENV"
+          echo "repo_diy_owner=${repo_diy_owner}" >> "$GITHUB_ENV"
+
+          # echo "repo_target=${repo_target}" >> "$GITHUB_ENV"
+          # echo "repo_target_branch=${repo_target_branch}" >> "$GITHUB_ENV"
+
+          # ========== Build Path ==========
+          dir_build="builder"
+          dir_output="output"
+          dir_backup="backup"
+          dir_diy="DIY"
+          # ---------- / ----------
+          path_build="/${dir_build}"
+          path_workspace="${path_build}/${tools_branch}"
+          path_output="${path_build}/${dir_output}"
+          path_backup="${path_build}/${dir_backup}"
+
+          path_diy="${path_workspace}/${dir_diy}"
+          # path_diy_branch="${path_diy}/${tools_branch}"
+
+          echo "path_build=${path_build}" >> "$GITHUB_ENV"
+          echo "path_workspace=${path_workspace}" >> "$GITHUB_ENV"
+          echo "path_output=${path_output}" >> "$GITHUB_ENV"
+          echo "path_backup=${path_backup}" >> "$GITHUB_ENV"
+
+          echo "path_diy=${path_diy}" >> "$GITHUB_ENV"
+          # echo "path_diy_branch=${path_diy_branch}" >> "$GITHUB_ENV"
+
+          # ========== DIY Files ==========
+
+          # ========== END ==========
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Check environment variable
+        id: checkenv
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+          echo -e "# ========== Repo Info =========="
+          echo -e "repo_diy: ${repo_diy}"
+          echo -e "repo_diy_owner: ${repo_diy_owner}"
+          # echo -e "repo_target: ${repo_target}"
+          # echo -e "repo_target_branch: ${repo_target_branch}"
+          echo -e "# ========== Build Path =========="
+          echo -e "path_build: ${path_build}"
+          echo -e "path_workspace: ${path_workspace}"
+          echo -e "path_output: ${path_output}"
+          echo -e "path_backup: ${path_backup}"
+          echo -e "path_diy: ${path_diy}"
+          # echo -e "path_diy_branch: ${path_diy_branch}"
+          # ========== END ==========
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Clear environment
+        id: clearinit
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+          # 删除docker所有镜像
+          docker rmi $(docker images -q) 2>/dev/null
+          # 如果环境变量 AGENT_TOOLSDIRECTORY 不为空，则删除该目录及其所有内容
+          [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
+          # 删除指定的目录及其所有内容，忽略所有错误信息
+          sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
+          # 关闭所有交换空间 删除指定的交换文件
+          sudo swapoff -a
+          sudo rm -f /swapfile /mnt/swapfile
+          df -Th
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Initialization environment
+        id: init
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+          # 更新 Ubuntu 的软件包列表
+          sudo -E apt -y -qq update
+          # 删除指定的软件包及其配置文件。如果删除失败，则忽略错误
+          sudo -E apt -y -qq purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
+          # 安装编译Openwrt所需依赖软件包
+          sudo -E apt -y -qq install \
+          ack \
+          antlr3 \
+          asciidoc \
+          autoconf \
+          automake \
+          autopoint \
+          binutils \
+          bison \
+          build-essential \
+          bzip2 \
+          ccache \
+          clang \
+          clangd \
+          cmake \
+          cpio \
+          curl \
+          device-tree-compiler \
+          ecj \
+          fastjar \
+          flex \
+          gawk \
+          gettext \
+          gcc-multilib \
+          g++-multilib \
+          git \
+          gperf \
+          haveged \
+          help2man \
+          intltool \
+          lib32gcc-s1 \
+          libc6-dev-i386 \
+          libelf-dev \
+          libglib2.0-dev \
+          libgmp3-dev \
+          libltdl-dev \
+          libmpc-dev \
+          libmpfr-dev \
+          libncurses5-dev \
+          libncursesw5 \
+          libncursesw5-dev \
+          libreadline-dev \
+          libssl-dev \
+          libtool \
+          lld \
+          lldb \
+          lrzsz \
+          mkisofs \
+          msmtp \
+          nano \
+          ninja-build \
+          p7zip-full \
+          patch \
+          pkgconf \
+          python3 \
+          python3-distutils \
+          python3-docutils \
+          python3-pip \
+          python3-ply \
+          qemu-utils \
+          re2c \
+          rsync \
+          scons \
+          squashfs-tools \
+          subversion \
+          swig \
+          texinfo \
+          uglifyjs \
+          unzip \
+          vim \
+          wget \
+          xmlto \
+          xxd \
+          zlib1g-dev \
+          libdb++-dev
+          # 安装arm-gcc工具链软件包
+          sudo -E apt -y -qq install gcc-aarch64-linux-gnu build-essential flex bison libssl-dev
+          # 删除所有不再需要的软件包及其配置文件, 清理 apt 的缓存
+          sudo -E apt -qq -y autoremove --purge
+          sudo -E apt -qq clean
+          # 设置系统的时区为环境变量 TZ 指定的值
+          sudo timedatectl set-timezone "${TZ}"
+          # 重新加载 systemd 的配置
+          sudo -E systemctl daemon-reload
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Initialization Docker environment
+        id: initDocker
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          # 0. Install Docker Engine on Ubuntu
+          # uninstall all conflicting packages
+          for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get -y remove $pkg; done
+
+          # 1. Set up Docker's apt repository.
+          # Add Docker's official GPG key:
+          sudo -E apt -y -qq update
+          sudo -E apt -y -qq install ca-certificates curl gnupg lsb-release
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+          # Add the repository to Apt sources:
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo -E apt -y -qq update
+
+          # 2. Install the Docker packages.(Latest)
+          sudo -E apt -y -qq install \
+          docker-ce \
+          docker-ce-cli \
+          containerd.io \
+          docker-buildx-plugin \
+          docker-compose-plugin
+
+          # sudo service docker start
+
+          # 清理apt
+          sudo -E apt -qq -y autoremove --purge
+          sudo -E apt -qq clean
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Create simulated physical disk
+        id: disk
+        working-directory: /
+        if: ${{ steps.init.outputs.status }} == 'success' && !cancelled()
+        run: |
+          echo -e "Current working directory: $(pwd)"
+          # 计算 /mnt 分区的可用空间（减去 1GB 作为缓冲）, 计算根分区的可用空间（减去 4GB 作为缓冲）
+          mnt_size=$(expr $(df -h /mnt | tail -1 | awk '{print $4}' | sed 's/[[:alpha:]]//g' | sed 's/\..*//') - 1)
+          root_size=$(expr $(df -h / | tail -1 | awk '{print $4}' | sed 's/[[:alpha:]]//g' | sed 's/\..*//') - 4)
+          # 创建一个大小为 mnt_size 的文件 /mnt/mnt.img, 创建一个大小为 root_size 的文件 /root.img
+          sudo truncate -s "${mnt_size}"G /mnt/mnt.img
+          sudo truncate -s "${root_size}"G /root.img
+          # 将这两个文件关联到 loop 设备, 在这两个 loop 设备上创建物理卷, 创建一个名为 github 的卷组，包含这两个物理卷
+          sudo losetup /dev/loop6 /mnt/mnt.img
+          sudo losetup /dev/loop7 /root.img
+          sudo pvcreate /dev/loop6
+          sudo pvcreate /dev/loop7
+          sudo vgcreate github /dev/loop6 /dev/loop7
+
+          # 在 github 卷组上创建一个名为 runner 的逻辑卷，使用所有可用空间, 在 runner 逻辑卷上创建一个 XFS 文件系统
+          sudo lvcreate -n runner -l 100%FREE github
+          sudo mkfs.xfs /dev/github/runner
+          # 创建一个挂载点 ${path_build}, 将 runner 逻辑卷挂载到 ${path_build}, 将 ${path_build} 的所有者和组更改为 runner
+          sudo mkdir -p ${path_build}
+          sudo mount /dev/github/runner ${path_build}
+          sudo chown -R runner.runner ${path_build}
+
+          df -Th
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Clone DIY
+        id: clonediy
+        working-directory: ${{ env.path_workspace }}
+        if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          git clone ${repo_diy} ${path_diy} --single-branch --depth=1 --branch=main
+          echo -e "repo_diy: [ ${repo_diy} ]\nBRANCH: [ main ]"
+
+          df -hT ${PWD}
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: (Dockerfile) Load DIY Dockerfile
+        working-directory: ${{ env.path_workspace }}
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          cp -f ${path_diy}/Dockerfile ${path_workspace}/Dockerfile
+          cat ./Dockerfile
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Build Docker Image
+        id: build
+        working-directory: ${{ env.path_workspace }}
+        if: ${{ steps.clonediy.outputs.status }} == 'success' && !cancelled()
+        env:
+          DOCKERFILE: "Dockerfile"
+          BASEIMAGE_OS: "debian:bookworm"
+          BASEIMAGE_VER: "slim"
+          APT_SRC: "deb.debian.org"
+          APT_OS_VER: "bookworm"
+          APT_SLIM: "true"
+          APT_PACKAGES: "curl gpg man expect iproute2 jq iptables iputils-ping"
+          APP_PLATFORM: "aarch64"
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          # dockerhub
+          HUB_REPO="grinch27/warp"
+          TAG="latest"
+
+          # 定义一个数组来存储 build_image 的参数和 tag
+          declare -A platforms=( ["linux/amd64"]="amd64" ["linux/arm64"]="aarch64" )
+
+          build_image() {
+              local platform=$1
+              local app_ver=$2
+              local app_platform=$3
+              local tag=$4
+              local tag_platform=$(echo $platform | cut -d '/' -f 2- | tr '/' '-')
+
+              docker buildx build \
+                  --file ./$DOCKERFILE \
+                  --platform $platform \
+                  --build-arg APT_PLATFORM=$platform \
+                  --build-arg BASEIMAGE_OS=$BASEIMAGE_OS \
+                  --build-arg BASEIMAGE_VER=$BASEIMAGE_VER \
+                  --build-arg HUB_REPO=$HUB_REPO \
+                  --build-arg APT_SRC=$APT_SRC \
+                  --build-arg APT_OS_VER=$APT_OS_VER \
+                  --build-arg APT_PACKAGES="$APT_PACKAGES" \
+                  --build-arg APP_PLATFORM=$app_platform \
+                  --tag "$HUB_REPO:$tag-$tag_platform" \
+                  --load ./
+          }
+
+          # 遍历数组并调用函数
+          for platform in "${!platforms[@]}"; do
+              build_image "$platform" "$APP_VER" "${platforms[$platform]}" "$TAG"
+          done
+
+          # # 为特定标签推送镜像
+          # docker push grinch27/warp:latest-amd64
+          # docker push grinch27/warp:latest-aarch64
+
+          # # 创建 manifest 列表
+          # docker manifest create --amend grinch27/warp:latest grinch27/warp:latest-amd64 grinch27/warp:latest-aarch64
+          # # 为每个镜像添加注释
+          # docker manifest annotate grinch27/warp:latest grinch27/warp:latest-amd64
+          # docker manifest annotate grinch27/warp:latest grinch27/warp:latest-aarch64
+          # # 推送 manifest 列表
+          # docker manifest push grinch27/warp:latest
+
+          # 清理 Docker 的缓存
+          docker system prune -a -f --volumes
+
+      - name: Clear workspace
+        id: clearwork
+        working-directory: ${{ env.path_build }}
+        run: |
+          echo -e "Current working directory: $(pwd)"
+          rm -rf ./* 2>/dev/null
+          df -hT ${PWD}
+          echo "status=success" >> ${GITHUB_OUTPUT}
