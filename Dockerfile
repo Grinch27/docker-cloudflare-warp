@@ -1,11 +1,11 @@
 # ARG BASEIMAGE_OS="ubuntu"
 # ARG BASEIMAGE_VER="jammy"
-FROM debian:bookworm
+FROM ubuntu:jammy
 
-ARG APT_OS_VER="bookworm"
+ARG APT_OS_VER="jammy"
 ARG APT_PLATFORM="arm64"
 
-# ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update --ignore-missing \
     && apt-get install -y --no-install-recommends \
@@ -32,4 +32,3 @@ RUN apt-get update --ignore-missing \
     && rm -rf /var/log/*.log
 
 # ENTRYPOINT ["/bin/warp-svc"]
-ENTRYPOINT ["/bin/bash"]
