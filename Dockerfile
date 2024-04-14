@@ -16,14 +16,14 @@ ARG APP_PLATFORM="arm64"
 RUN apt-get update --ignore-missing && apt-get install -y --no-install-recommends --fix-missing ca-certificates
 
 # Backup old sources and Add Ubuntu jammy sources
-RUN mv /etc/apt/sources.list /etc/apt/sources.list.bak || true \
-    && echo "deb http://${APT_SRC}/ubuntu/ ${APT_OS_VER} main restricted universe multiverse" > /etc/apt/sources.list \
-    && echo "deb http://${APT_SRC}/ubuntu/ ${APT_OS_VER}-updates main restricted universe multiverse" >> /etc/apt/sources.list \
-    && echo "deb http://${APT_SRC}/ubuntu/ ${APT_OS_VER}-backports main restricted universe multiverse" >> /etc/apt/sources.list \
-    && echo "deb http://${APT_SRC}/ubuntu/ ${APT_OS_VER}-security main restricted universe multiverse" >> /etc/apt/sources.list
+# RUN mv /etc/apt/sources.list /etc/apt/sources.list.bak || true \
+#     && echo "deb http://${APT_SRC}/ubuntu/ ${APT_OS_VER} main restricted universe multiverse" > /etc/apt/sources.list \
+#     && echo "deb http://${APT_SRC}/ubuntu/ ${APT_OS_VER}-updates main restricted universe multiverse" >> /etc/apt/sources.list \
+#     && echo "deb http://${APT_SRC}/ubuntu/ ${APT_OS_VER}-backports main restricted universe multiverse" >> /etc/apt/sources.list \
+#     && echo "deb http://${APT_SRC}/ubuntu/ ${APT_OS_VER}-security main restricted universe multiverse" >> /etc/apt/sources.list
 
 # Install packages
-RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing ${APT_PACKAGES}
+RUN apt-get update --ignore-missing && apt-get install -y --no-install-recommends --fix-missing ${APT_PACKAGES}
 
 # Add cloudflare gpg key
 RUN apt-get install -y --no-install-recommends --fix-missing gpg \
