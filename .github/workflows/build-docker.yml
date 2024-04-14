@@ -342,7 +342,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@master
         with:
-          images: grinch27/warp
+          images: grinch27/cloudflare-warp
           tags: latest
 
       - name: Build and push Docker image
@@ -356,75 +356,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            BASEIMAGE_OS=ubuntu
-            BASEIMAGE_VER=jammy
-            HUB_REPO=grinch27/warp
-            APT_SRC=archive.ubuntu.com
             APT_OS_VER=jammy
-            APT_PACKAGES="curl gpg man expect iproute2 jq iptables iputils-ping systemctl"
-            APP_PLATFORM=arm64
-      # - name: Build Docker Image
-      #   id: build
-      #   working-directory: ${{ env.path_workspace }}
-      #   if: ${{ steps.clonediy.outputs.status }} == 'success' && !cancelled()
-      #   env:
-      #     DOCKERFILE: "Dockerfile"
-      #     BASEIMAGE_OS: "debian:bookworm"
-      #     BASEIMAGE_VER: "slim"
-      #     APT_SRC: "deb.debian.org"
-      #     APT_OS_VER: "bookworm"
-      #     APT_SLIM: "true"
-      #     APT_PACKAGES: "curl gpg man expect iproute2 jq iptables iputils-ping systemctl"
-      #   run: |
-      #     echo -e "Current working directory: $(pwd)"
-
-      #     # dockerhub
-      #     HUB_REPO="grinch27/warp"
-      #     TAG="latest"
-
-      #     # 定义一个数组来存储 build_image 的参数和 tag
-      #     declare -A platforms=( ["linux/amd64"]="amd64" ["linux/arm64"]="arm64" )
-
-      #     build_image() {
-      #         local platform=$1
-      #         local app_platform=$2
-      #         local tag=$3
-      #         local tag_platform=$(echo $platform | cut -d '/' -f 2- | tr '/' '-')
-
-      #         docker buildx build \
-      #             --file ./$DOCKERFILE \
-      #             --platform $platform \
-      #             --build-arg APT_PLATFORM=$platform \
-      #             --build-arg BASEIMAGE_OS=$BASEIMAGE_OS \
-      #             --build-arg BASEIMAGE_VER=$BASEIMAGE_VER \
-      #             --build-arg HUB_REPO=$HUB_REPO \
-      #             --build-arg APT_SRC=$APT_SRC \
-      #             --build-arg APT_OS_VER=$APT_OS_VER \
-      #             --build-arg APT_PACKAGES="$APT_PACKAGES" \
-      #             --build-arg APP_PLATFORM=$app_platform \
-      #             --tag "$HUB_REPO:$tag-$tag_platform" \
-      #             --load ./
-      #     }
-
-      #     # 遍历数组并调用函数
-      #     for platform in "${!platforms[@]}"; do
-      #         build_image "$platform" "${platforms[$platform]}" "$TAG"
-      #     done
-
-      #     # # 为特定标签推送镜像
-      #     # docker push grinch27/warp:latest-amd64
-      #     # docker push grinch27/warp:latest-aarch64
-
-      #     # # 创建 manifest 列表
-      #     # docker manifest create --amend grinch27/warp:latest grinch27/warp:latest-amd64 grinch27/warp:latest-aarch64
-      #     # # 为每个镜像添加注释
-      #     # docker manifest annotate grinch27/warp:latest grinch27/warp:latest-amd64
-      #     # docker manifest annotate grinch27/warp:latest grinch27/warp:latest-aarch64
-      #     # # 推送 manifest 列表
-      #     # docker manifest push grinch27/warp:latest
-
-      #     # 清理 Docker 的缓存
-      #     docker system prune -a -f --volumes
+            APT_PLATFORM=arm64
 
       - name: Clear workspace
         id: clearwork
