@@ -4,13 +4,13 @@ ARG BASEIMAGE_VER="slim"
 FROM ${BASEIMAGE_OS}-${BASEIMAGE_VER}
 
 # APT
-ARG APT_PLATFORM="linux/arm64"
+# ARG APT_PLATFORM="linux/arm64"
 ARG APT_SRC="deb.debian.org"
 ARG APT_OS_VER="bookworm"
-ARG APT_PACKAGES="curl gpg man expect iproute2 jq iptables iputils-ping "
+ARG APT_PACKAGES="curl gpg man expect iproute2 jq iptables iputils-ping systemctl"
 # APP
 # ARG APP_VER="3.61.0.12-1"
-ARG APP_PLATFORM="amd64"
+ARG APP_PLATFORM="arm64"
 
 RUN apt-get update --ignore-missing \
     && apt-get install -y --no-install-recommends --fix-missing ca-certificates \
