@@ -5,7 +5,7 @@ FROM debian:bookworm-slim
 ARG APT_OS_VER="bookworm"
 ARG APT_PLATFORM="arm64"
 
-ENV DEBIAN_FRONTEND=noninteractive
+# ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update --ignore-missing \
     && apt-get install -y --no-install-recommends \
