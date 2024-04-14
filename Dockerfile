@@ -1,8 +1,7 @@
-# ARG BASEIMAGE_OS="ubuntu"
-# ARG BASEIMAGE_VER="jammy"
-FROM ubuntu:jammy
+# FROM ubuntu:jammy
+FROM debian:bookworm-slim
 
-ARG APT_OS_VER="jammy"
+ARG APT_OS_VER="bookworm"
 ARG APT_PLATFORM="arm64"
 
 # ENV DEBIAN_FRONTEND=noninteractive

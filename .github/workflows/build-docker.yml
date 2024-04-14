@@ -207,7 +207,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            APT_OS_VER=jammy
+            APT_OS_VER=bookworm
             APT_PLATFORM=arm64
 
       - name: Clear workspace
