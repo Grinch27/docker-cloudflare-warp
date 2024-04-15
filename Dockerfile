@@ -15,8 +15,8 @@ RUN apt-get update --ignore-missing \
         # expect \
         # iproute2 \
         # jq \
-        nftables \
-        systemd  \
+        # nftables \
+        # systemd  \
         # iputils-ping \
         # vim \
         # sudo \
