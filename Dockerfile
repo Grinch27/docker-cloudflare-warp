@@ -23,10 +23,10 @@ RUN apt-get update --ignore-missing \
         # sudo \
         # procps \
     # Add cloudflare gpg key
-    && ARCH=$(dpkg --print-architecture) \
+    && OS_ARCH=$(dpkg --print-architecture) \
     && OS_VER=$(lsb_release -cs) \
     && curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg \
-    && echo "deb [arch=${ARCH} signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ ${OS_VER} main" > /etc/apt/sources.list.d/cloudflare-client.list \
+    && echo "deb [arch=${OS_ARCH} signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ ${OS_VER} main" > /etc/apt/sources.list.d/cloudflare-client.list \
     # Clean pre-install
     && apt-get purge --autoremove -y \
         gpg \
