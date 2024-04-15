@@ -35,7 +35,10 @@ RUN apt-get update --ignore-missing \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/*.log
 
-RUN echo "#!/bin/sh\n/bin/warp-svc --disable-gpu-sandbox --no-sandbox" > /startapp.sh \
+
+
+
+RUN echo "#!/bin/sh\nXvfb :1 -screen 0 1024x768x16 &\nx11vnc -display :1 -nopw -listen localhost -xkb -ncache 10 -ncache_cr -forever &\nexport DISPLAY=:1.0\nopenbox-session" > /startapp.sh \
     # set /startapp.sh
     && chmod +x /startapp.sh \
     # openbox
