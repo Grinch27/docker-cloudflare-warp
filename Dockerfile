@@ -34,5 +34,16 @@ RUN apt-get update --ignore-missing \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/*.log
 
+RUN echo "#!/bin/sh\n/bin/warp-svc --disable-gpu-sandbox --no-sandbox" > /startapp.sh \
+    # set /startapp.sh
+    && chmod +x /startapp.sh \
+    # openbox
+    && mkdir -p /etc/openbox \
+    && echo "<Type>normal</Type>\n<Name>cloudflare-warp</Name>" > /etc/openbox/main-window-selection.xml \
+    # set /config/.config/mimeapps.list
+    && mkdir -p /config/.config \
+    && echo "\n[Default Applications]\nx-scheme-handler/cloudflare-warp=cloudflare-warp.desktop" > /config/.config/mimeapps.list \
+    && chmod 777 /config/.config/mimeapps.list
+
 # ENTRYPOINT ["/bin/warp-svc"]
 ENTRYPOINT ["/init"]
