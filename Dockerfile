@@ -31,5 +31,5 @@ RUN apt-get update --ignore-missing \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/*.log
 
-ENTRYPOINT ["/bin/warp-svc"]
-# ENTRYPOINT ["/bin/bash"]
+# ENTRYPOINT ["/bin/warp-svc"]
+ENTRYPOINT ["/bin/bash", "/bin/warp-svc"]
