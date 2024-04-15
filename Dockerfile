@@ -31,7 +31,10 @@ RUN apt-get update --ignore-missing \
         cloudflare-warp \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /var/log/*.log
-
+    && rm -rf /var/log/*.log \
+    # startapp.sh
+    && echo "#!/bin/sh\nservice dbus start\n/bin/warp-svc" > /startapp.sh \
+    && chmod +x /startapp.sh
+    
 # ENTRYPOINT ["/bin/warp-svc"]
-ENTRYPOINT ["/bin/sh -c"]
+ENTRYPOINT ["/startapp.sh"]
