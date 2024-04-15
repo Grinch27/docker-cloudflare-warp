@@ -2,7 +2,7 @@
 # FROM debian:bookworm-slim
 FROM jlesage/baseimage-gui:ubuntu-22.04-v4
 
-ARG APT_OS_VER="bullseye"
+ARG APT_OS_VER="jammy"
 ARG APT_PLATFORM="arm64"
 
 # ENV DEBIAN_FRONTEND=noninteractive
