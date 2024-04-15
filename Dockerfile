@@ -21,6 +21,7 @@ RUN apt-get update --ignore-missing \
         vim \
         sudo \
         procps \
+        tini \
     # Add cloudflare gpg key
     && curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg \
     && echo "deb [arch=${APT_PLATFORM} signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ ${APT_OS_VER} main" > /etc/apt/sources.list.d/cloudflare-client.list \
@@ -32,5 +33,4 @@ RUN apt-get update --ignore-missing \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/*.log
 
-# ENTRYPOINT ["/bin/warp-svc"]
-ENTRYPOINT ["/bin/warp-svc"]
+ENTRYPOINT ["/init"]
