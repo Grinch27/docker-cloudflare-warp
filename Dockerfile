@@ -29,9 +29,8 @@ RUN apt-get update --ignore-missing \
     && echo "deb [arch=${OS_ARCH} signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ ${OS_VER} main" > /etc/apt/sources.list.d/cloudflare-client.list \
     # Clean pre-install
     && apt-get purge --autoremove -y \
-        gpg \
+        # gpg \
         lsb-release \
-    && apt-get purge --autoremove -y \
     # Install cloudflare-warp
     && apt-get update \
     && apt-get install -y \
@@ -41,7 +40,7 @@ RUN apt-get update --ignore-missing \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/*.log \
     # ENTRYPOINT startapp.sh
-    && echo "#!/bin/sh\nservice dbus start\n/bin/warp-svc" > /startapp.sh \
+    && echo "#!/bin/sh\nservice dbus start\n/bin/warp-svc\n" > /startapp.sh \
     && chmod +x /startapp.sh
     
 # ENTRYPOINT ["/bin/warp-svc"]
