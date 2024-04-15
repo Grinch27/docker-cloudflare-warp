@@ -9,8 +9,8 @@ FROM debian:bookworm-slim
 RUN apt-get update --ignore-missing \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
-        curl \
         gpg \
+        curl \
         lsb-release \
         # man \
         # expect \
@@ -29,7 +29,7 @@ RUN apt-get update --ignore-missing \
     && echo "deb [arch=${OS_ARCH} signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ ${OS_VER} main" > /etc/apt/sources.list.d/cloudflare-client.list \
     # Clean pre-install
     && apt-get purge --autoremove -y \
-        # gpg \
+        curl \
         lsb-release \
     # Install cloudflare-warp
     && apt-get update \
