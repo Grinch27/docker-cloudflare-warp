@@ -32,4 +32,4 @@ RUN apt-get update --ignore-missing \
     && rm -rf /var/log/*.log
 
 # ENTRYPOINT ["/bin/warp-svc"]
-ENTRYPOINT ["/init", "/bin/warp-svc"]
+ENTRYPOINT ["/bin/warp-svc"]
