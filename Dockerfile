@@ -23,7 +23,7 @@ RUN apt-get update --ignore-missing \
         sudo \
         procps \
         # tini \
-    && apt-get upgrade -y \
+    # && apt-get upgrade -y \
     # Add cloudflare gpg key
     && curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg \
     && echo "deb [arch=${APT_PLATFORM} signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ ${APT_OS_VER} main" > /etc/apt/sources.list.d/cloudflare-client.list \
