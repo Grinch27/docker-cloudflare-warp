@@ -15,7 +15,7 @@ RUN apt-get update --ignore-missing \
         expect \
         iproute2 \
         jq \
-        iptables \
+        nftables \
         iputils-ping \
         systemd  \
         vim \
