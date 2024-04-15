@@ -1,8 +1,7 @@
 # FROM ubuntu:jammy
-# FROM debian:bookworm-slim
-FROM jlesage/baseimage-gui:ubuntu-22.04-v4
+FROM debian:bookworm-slim
 
-ARG APT_OS_VER="jammy"
+ARG APT_OS_VER="bookworm"
 ARG APT_PLATFORM="arm64"
 
 # ENV DEBIAN_FRONTEND=noninteractive
@@ -23,7 +22,6 @@ RUN apt-get update --ignore-missing \
         sudo \
         procps \
         # tini \
-    # && apt-get upgrade -y \
     # Add cloudflare gpg key
     && curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg \
     && echo "deb [arch=${APT_PLATFORM} signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ ${APT_OS_VER} main" > /etc/apt/sources.list.d/cloudflare-client.list \
@@ -35,19 +33,5 @@ RUN apt-get update --ignore-missing \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/*.log
 
-
-
-
-RUN echo "#!/bin/sh\nXvfb :1 -screen 0 1024x768x16 &\nx11vnc -display :1 -nopw -listen localhost -xkb -ncache 10 -ncache_cr -forever &\nexport DISPLAY=:1.0\nopenbox-session" > /startapp.sh \
-    # set /startapp.sh
-    && chmod +x /startapp.sh \
-    # openbox
-    && mkdir -p /etc/openbox \
-    && echo "<Type>normal</Type>\n<Name>cloudflare-warp</Name>" > /etc/openbox/main-window-selection.xml \
-    # set /config/.config/mimeapps.list
-    && mkdir -p /config/.config \
-    && echo "\n[Default Applications]\nx-scheme-handler/cloudflare-warp=cloudflare-warp.desktop" > /config/.config/mimeapps.list \
-    && chmod 777 /config/.config/mimeapps.list
-
 # ENTRYPOINT ["/bin/warp-svc"]
-ENTRYPOINT ["/init"]
+ENTRYPOINT ["/bin/sh -c"]
