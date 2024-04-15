@@ -1,5 +1,5 @@
 # FROM ubuntu:jammy
-FROM debian:bookworm-slim
+FROM debian:bookworm
 
 ARG APT_OS_VER="bookworm"
 ARG APT_PLATFORM="arm64"
