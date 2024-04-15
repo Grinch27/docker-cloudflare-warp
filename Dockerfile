@@ -30,6 +30,7 @@ RUN apt-get update --ignore-missing \
     && apt-get update \
     && apt-get install -y \
         cloudflare-warp \
+    && apt-get upgrade -y libc6 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/*.log
