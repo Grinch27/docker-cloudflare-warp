@@ -1,6 +1,6 @@
 # FROM ubuntu:jammy
 # FROM debian:bookworm-slim
-FROM jlesage/baseimage-gui:debian-11-v4
+FROM jlesage/baseimage-gui:ubuntu-22.04-v4
 
 ARG APT_OS_VER="bullseye"
 ARG APT_PLATFORM="arm64"
