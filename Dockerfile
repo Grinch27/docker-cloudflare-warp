@@ -33,4 +33,4 @@ RUN apt-get update --ignore-missing \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/*.log
 
-ENTRYPOINT ["/init"]
+ENTRYPOINT ["/bin/warp-svc"]
