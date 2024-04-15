@@ -29,7 +29,9 @@ RUN apt-get update --ignore-missing \
     && apt-get install -y \
         cloudflare-warp \
     # clean apt
-    && apt-get -y autoremove --purge \
+    && apt-get purge --autoremove -y \
+        gpg \
+    && apt-get purge --autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/*.log \
