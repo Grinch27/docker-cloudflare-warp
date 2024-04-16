@@ -18,10 +18,19 @@ on:
         type: choice
         options:
           - all
+      arch_branch:
+        description: "Select arch_branch"
+        required: true
+        default: "arm64"
+        type: choice
+        options:
+          - amd64
+          - arm64
 
 env:
   TZ: America/New_York
   tools_branch: ${{ inputs.tools_branch }}
+  arch_branch: ${{ inputs.arch_branch }}
   # device_branch: ${{ inputs.device_branch }}
 
 jobs:
@@ -178,7 +187,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@master
         with:
-          platforms: arm64
+          platforms: ${{ env.arch_branch }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@master
@@ -202,13 +211,13 @@ jobs:
           context: .
           file: ${{ env.path_diy }}/Dockerfile
           no-cache: false
-          platforms: linux/arm64
+          platforms: linux/${{ env.arch_branch }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             APT_OS_VER=bookworm
-            APT_PLATFORM=arm64
+            APT_PLATFORM=${{ env.arch_branch }}
 
       - name: Clear workspace
         id: clearwork
