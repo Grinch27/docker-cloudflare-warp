@@ -43,7 +43,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set environment variable (${{ inputs.tools_branch }})
+      - name: Set environment variable ${{ inputs.arch_branch }}
         id: var
         working-directory: /
         run: |
@@ -203,7 +203,9 @@ jobs:
         uses: docker/metadata-action@master
         with:
           images: grinch27/cloudflare-warp
-          tags: latest
+          tags: |
+            type=raw,value=latest-${{ env.arch_branch }},enabled=true
+            type=raw,value=${{ github.sha }},enabled=true
 
       - name: Build and push Docker image
         uses: docker/build-push-action@master
