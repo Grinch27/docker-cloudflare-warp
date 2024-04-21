@@ -21,9 +21,10 @@ on:
       arch_branch:
         description: "Select arch_branch"
         required: true
-        default: "arm64"
+        default: "all"
         type: choice
         options:
+          - all
           - amd64
           - arm64
 
@@ -31,7 +32,6 @@ env:
   TZ: America/New_York
   tools_branch: ${{ inputs.tools_branch }}
   arch_branch: ${{ inputs.arch_branch }}
-  # device_branch: ${{ inputs.device_branch }}
 
 jobs:
   build:
@@ -53,14 +53,8 @@ jobs:
           repo_diy="https://github.com/$GITHUB_REPOSITORY"
           repo_diy_owner="$GITHUB_REPOSITORY_OWNER"
 
-          # repo_target="https://github.com/hanwckf/bl-mt798x"
-          # repo_target_branch="master"
-
           echo "repo_diy=${repo_diy}" >> "$GITHUB_ENV"
           echo "repo_diy_owner=${repo_diy_owner}" >> "$GITHUB_ENV"
-
-          # echo "repo_target=${repo_target}" >> "$GITHUB_ENV"
-          # echo "repo_target_branch=${repo_target_branch}" >> "$GITHUB_ENV"
 
           # ========== Build Path ==========
           dir_build="builder"
@@ -74,7 +68,6 @@ jobs:
           path_backup="${path_build}/${dir_backup}"
 
           path_diy="${path_workspace}/${dir_diy}"
-          # path_diy_branch="${path_diy}/${tools_branch}"
 
           echo "path_build=${path_build}" >> "$GITHUB_ENV"
           echo "path_workspace=${path_workspace}" >> "$GITHUB_ENV"
@@ -82,7 +75,6 @@ jobs:
           echo "path_backup=${path_backup}" >> "$GITHUB_ENV"
 
           echo "path_diy=${path_diy}" >> "$GITHUB_ENV"
-          # echo "path_diy_branch=${path_diy_branch}" >> "$GITHUB_ENV"
 
           # ========== DIY Files ==========
 
@@ -97,15 +89,14 @@ jobs:
           echo -e "# ========== Repo Info =========="
           echo -e "repo_diy: ${repo_diy}"
           echo -e "repo_diy_owner: ${repo_diy_owner}"
-          # echo -e "repo_target: ${repo_target}"
-          # echo -e "repo_target_branch: ${repo_target_branch}"
+
           echo -e "# ========== Build Path =========="
           echo -e "path_build: ${path_build}"
           echo -e "path_workspace: ${path_workspace}"
           echo -e "path_output: ${path_output}"
           echo -e "path_backup: ${path_backup}"
           echo -e "path_diy: ${path_diy}"
-          # echo -e "path_diy_branch: ${path_diy_branch}"
+
           # ========== END ==========
           echo "status=success" >> ${GITHUB_OUTPUT}
 
@@ -187,7 +178,8 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@master
         with:
-          platforms: ${{ env.arch_branch }}
+          platforms: linux/amd64,linux/arm64
+          # platforms: ${{ env.arch_branch }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@master
@@ -203,9 +195,10 @@ jobs:
         uses: docker/metadata-action@master
         with:
           images: grinch27/cloudflare-warp
-          tags: |
-            type=raw,value=latest-${{ env.arch_branch }},enabled=true
-            type=raw,value=${{ github.sha }},enabled=true
+          tags: latest
+          # tags: |
+          #       type=raw,value=latest-${{ env.arch_branch }},enabled=true
+          #       type=raw,value=${{ github.sha }},enabled=true
 
       - name: Build and push Docker image
         uses: docker/build-push-action@master
@@ -213,13 +206,12 @@ jobs:
           context: .
           file: ${{ env.path_diy }}/Dockerfile
           no-cache: false
-          platforms: linux/${{ env.arch_branch }}
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            APT_OS_VER=bookworm
-            APT_PLATFORM=${{ env.arch_branch }}
+            WARP_VERSION=2021.10.0
 
       - name: Clear workspace
         id: clearwork
