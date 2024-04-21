@@ -43,6 +43,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Install cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@main
+
       - name: Set environment variable ${{ inputs.arch_branch }}
         id: var
         working-directory: /
@@ -190,15 +194,32 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Get package version
+        id: get_version
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const exec = require('@actions/exec');
+            let version = '';
+            const options = {
+              listeners: {
+                stdout: (data) => {
+                  version += data.toString();
+                },
+              },
+            };
+            await exec.exec('dpkg-query -W -f="${Version}" cloudflare-warp', [], options);
+            return version.trim();
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@master
         with:
           images: grinch27/cloudflare-warp
-          tags: latest
-          # tags: |
-          #       type=raw,value=latest-${{ env.arch_branch }},enabled=true
-          #       type=raw,value=${{ github.sha }},enabled=true
+          tags: |
+            type=raw,value=latest,enabled=true
+            type=raw,value=${{ steps.get_version.outputs.result }},enabled=true
+          flavor: latest=false
 
       - name: Build and push Docker image
         uses: docker/build-push-action@master
@@ -210,8 +231,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            WARP_VERSION=2021.10.0
+          # build-args: |
+          #
 
       - name: Clear workspace
         id: clearwork
