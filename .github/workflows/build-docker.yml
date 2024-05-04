@@ -162,36 +162,36 @@ jobs:
       # && apt-get install -y \
       #     cloudflare-warp \
 
-      - name: Get package version
-        id: version
-        working-directory: ${{ github.workspace }}
-        run: |
-          echo -e "Current working directory: $(pwd)"
+      # - name: Get package version
+      #   id: version
+      #   working-directory: ${{ github.workspace }}
+      #   run: |
+      #     echo -e "Current working directory: $(pwd)"
 
-          # APT
-          sudo -E apt-get -y -qq update
-          sudo -E apt-get -y -qq install \
-          curl \
-          gpg \
+      #     # APT
+      #     sudo -E apt-get -y -qq update
+      #     sudo -E apt-get -y -qq install \
+      #     curl \
+      #     gpg \
 
-          # Add cloudflare gpg key
-          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-          sudo -E apt-get -y -qq update
+      #     # Add cloudflare gpg key
+      #     curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+      #     sudo -E apt-get -y -qq update
 
-          # dpkg -l <package-name>:<architecture>
-          ver_amd64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp:amd64)
-          ver_arm64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp:arm64)
+      #     # dpkg -l <package-name>:<architecture>
+      #     ver_amd64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp:amd64)
+      #     ver_arm64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp:arm64)
 
-          if [ "$ver_amd64" != "$ver_arm64" ]; then
-            echo "Error: Version mismatch between amd64 and arm64"
-            exit 1
-          else
-            echo "Version: $ver_amd64"
-            echo "::set-output name=version::$ver_amd64"
-          fi
+      #     if [ "$ver_amd64" != "$ver_arm64" ]; then
+      #       echo "Error: Version mismatch between amd64 and arm64"
+      #       exit 1
+      #     else
+      #       echo "Version: $ver_amd64"
+      #       echo "::set-output name=version::$ver_amd64"
+      #     fi
 
-          echo "ver=${TAGS_NAME}" >> ${GITHUB_OUTPUT}
-          echo "status=success" >> ${GITHUB_OUTPUT}
+      #     echo "ver=${TAGS_NAME}" >> ${GITHUB_OUTPUT}
+      #     echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
