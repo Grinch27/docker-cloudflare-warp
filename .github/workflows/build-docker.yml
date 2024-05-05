@@ -2,7 +2,7 @@ name: Build Docker
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 * * * *"
   repository_dispatch:
   workflow_dispatch:
     inputs:
@@ -13,13 +13,13 @@ on:
         type: choice
         options:
           - warp
-      device_branch:
-        description: "Select device branch"
-        required: true
-        default: "all"
-        type: choice
-        options:
-          - all
+      # device_branch:
+      #   description: "Select device branch"
+      #   required: true
+      #   default: "all"
+      #   type: choice
+      #   options:
+      #     - all
       arch_branch:
         description: "Select arch_branch"
         required: true
@@ -32,8 +32,8 @@ on:
 
 env:
   TZ: America/New_York
-  tools_branch: ${{ inputs.tools_branch }}
-  arch_branch: ${{ inputs.arch_branch }}
+  tools_branch: ${{ inputs.tools_branch || 'warp' }}
+  arch_branch: ${{ inputs.arch_branch || 'all' }}
 
 jobs:
   build:
