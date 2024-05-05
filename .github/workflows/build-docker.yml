@@ -171,17 +171,16 @@ jobs:
             cloudflare-warp
 
           # dpkg -l <package-name>:<architecture>
-          ver_amd64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp)
-          # ver_arm64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp:arm64)
+          ver_amd64=$(dpkg-query -W -f='${Version}' cloudflare-warp)
+          # ver_arm64=$(dpkg-query -W -f='${Version}' cloudflare-warp:arm64)
 
           # uninstall
           sudo -E apt-get -y -qq purge --autoremove \
             cloudflare-warp
 
-          echo "Version: $ver_amd64"
-          echo "::set-output name=version::$ver_amd64"
+          echo "version: $ver_amd64"
+          echo "version=$ver_amd64" >> $GITHUB_ENV
 
-          echo "ver=${ver_amd64}" >> ${GITHUB_OUTPUT}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Extract metadata (tags, labels) for Docker
@@ -191,7 +190,7 @@ jobs:
           images: grinch27/cloudflare-warp
           tags: |
             type=raw,value=latest,enabled=true
-          # type=raw,value=${{ steps.get_version.outputs.result }},enabled=true
+            type=raw,value=${{ steps.ver.outputs.version }},enabled=true
           flavor: latest=false
 
       - name: Build and push Docker image
