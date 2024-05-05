@@ -135,23 +135,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # - name: Get package version
-      #   id: get_version
-      #   uses: actions/github-script@v5
-      #   with:
-      #     script: |
-      #       const exec = require('@actions/exec');
-      #       let version = '';
-      #       const options = {
-      #         listeners: {
-      #           stdout: (data) => {
-      #             version += data.toString();
-      #           },
-      #         },
-      #       };
-      #       await exec.exec('dpkg-query -W -f="${Version}" cloudflare-warp', [], options);
-      #       return version.trim();
-
       # # Add cloudflare gpg key
       # && OS_ARCH=$(dpkg --print-architecture) \
       # && OS_VER=$(lsb_release -cs) \
@@ -162,36 +145,39 @@ jobs:
       # && apt-get install -y \
       #     cloudflare-warp \
 
-      # - name: Get package version
-      #   id: version
-      #   working-directory: ${{ github.workspace }}
-      #   run: |
-      #     echo -e "Current working directory: $(pwd)"
+      - name: Get package version
+        id: ver
+        working-directory: ${{ github.workspace }}
+        run: |
+          echo -e "Current working directory: $(pwd)"
 
-      #     # APT
-      #     sudo -E apt-get -y -qq update
-      #     sudo -E apt-get -y -qq install \
-      #     curl \
-      #     gpg \
+          # APT
+          sudo -E apt-get -y -qq update
+          sudo -E apt-get -y -qq install \
+            curl \
+            gpg
 
-      #     # Add cloudflare gpg key
-      #     curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-      #     sudo -E apt-get -y -qq update
+          # Add cloudflare gpg key
+          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+          sudo -E apt-get -y -qq update
 
-      #     # dpkg -l <package-name>:<architecture>
-      #     ver_amd64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp:amd64)
-      #     ver_arm64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp:arm64)
+          # install
+          sudo -E apt-get -y -qq install \
+            cloudflare-warp
 
-      #     if [ "$ver_amd64" != "$ver_arm64" ]; then
-      #       echo "Error: Version mismatch between amd64 and arm64"
-      #       exit 1
-      #     else
-      #       echo "Version: $ver_amd64"
-      #       echo "::set-output name=version::$ver_amd64"
-      #     fi
+          # uninstall
+          sudo -E apt-get -y -qq purge --autoremove \
+            cloudflare-warp
 
-      #     echo "ver=${TAGS_NAME}" >> ${GITHUB_OUTPUT}
-      #     echo "status=success" >> ${GITHUB_OUTPUT}
+          # dpkg -l <package-name>:<architecture>
+          ver_amd64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp:amd64)
+          # ver_arm64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp:arm64)
+
+          echo "Version: $ver_amd64"
+          echo "::set-output name=version::$ver_amd64"
+
+          echo "ver=${ver_amd64}" >> ${GITHUB_OUTPUT}
+          echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
