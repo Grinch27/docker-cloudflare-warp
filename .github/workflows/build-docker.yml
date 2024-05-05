@@ -175,7 +175,7 @@ jobs:
             cloudflare-warp
 
           # dpkg -l <package-name>:<architecture>
-          ver_amd64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp:amd64)
+          ver_amd64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp)
           # ver_arm64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp:arm64)
 
           echo "Version: $ver_amd64"
