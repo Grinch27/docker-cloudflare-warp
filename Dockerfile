@@ -14,7 +14,6 @@ RUN apt-get update --ignore-missing \
         # iproute2 \
         # jq \
         # nftables \
-        # systemd  \
         # iputils-ping \
         # vim \
         # sudo \
@@ -32,6 +31,7 @@ RUN apt-get update --ignore-missing \
     && apt-get update \
     && apt-get install -y \
         cloudflare-warp \
+        systemd \
     # Clean apt
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \

@@ -179,7 +179,7 @@ jobs:
             cloudflare-warp
 
           echo "version: $ver_amd64"
-          echo "version=$ver_amd64" >> $GITHUB_ENV
+          echo "version=$ver_amd64" >> ${GITHUB_OUTPUT} # $GITHUB_ENV
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
