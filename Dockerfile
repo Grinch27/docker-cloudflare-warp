@@ -9,6 +9,7 @@ RUN apt-get update --ignore-missing \
         gpg \
         curl \
         lsb-release \
+        systemd \
         # man \
         # expect \
         # iproute2 \
@@ -31,7 +32,6 @@ RUN apt-get update --ignore-missing \
     && apt-get update \
     && apt-get install -y \
         cloudflare-warp \
-        systemd \
     # Clean apt
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
