@@ -170,13 +170,13 @@ jobs:
           sudo -E apt-get -y -qq install \
             cloudflare-warp
 
-          # uninstall
-          sudo -E apt-get -y -qq purge --autoremove \
-            cloudflare-warp
-
           # dpkg -l <package-name>:<architecture>
           ver_amd64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp)
           # ver_arm64=$(dpkg-query -W -f='${Version}\n' cloudflare-warp:arm64)
+
+          # uninstall
+          sudo -E apt-get -y -qq purge --autoremove \
+            cloudflare-warp
 
           echo "Version: $ver_amd64"
           echo "::set-output name=version::$ver_amd64"
