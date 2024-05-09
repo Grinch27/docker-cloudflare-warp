@@ -7,21 +7,26 @@ on:
   workflow_dispatch:
     inputs:
       package_app:
-        description: "Select openwrt branch"
+        description: "Input package"
         required: true
         default: "cloudflare-warp"
         type: string
       arch_branch:
-        description: "Select arch_branch"
+        description: "Input arch"
         required: true
         default: "linux/amd64,linux/arm64"
+        type: string
+      dockerhub_repo:
+        description: "Docker Hub repository"
+        required: true
+        default: "grinch27/cloudflare-warp"
         type: string
 
 env:
   TZ: UTC
   package_app: ${{ inputs.package_app || 'cloudflare-warp' }}
   arch_branch: ${{ inputs.arch_branch || 'linux/amd64,linux/arm64' }}
-  dockerhub_repo: grinch27/cloudflare-warp
+  dockerhub_repo: ${{ inputs.dockerhub_repo || 'grinch27/cloudflare-warp' }}
 
 jobs:
   build:
@@ -127,17 +132,20 @@ jobs:
 
       - name: Test Docker image
         id: test
+        env:
+          image: ${{ env.dockerhub_repo }}:latest
+          container_name: ${{ env.package_app }}
         run: |
-          # set -e
-          # docker run --rm ${{ env.dockerhub_repo }}:latest warp-cli --version | tee /dev/stderr | grep 'warp-cli'
-
           # Run Docker container
-          docker run --name test_container --rm -d ${{ env.dockerhub_repo }}:latest sleep infinity
+          docker run --name ${{ env.container_name }} --rm -d ${{ env.image }} sleep infinity
 
           # Execute command in Docker container
-          docker exec test_container warp-cli --version | tee /dev/stderr | grep 'warp-cli'
+          docker exec ${{ env.container_name }} warp-cli --version | tee /dev/stderr | grep 'warp-cli'
 
           # Stop Docker container
-          docker stop test_container
+          docker stop ${{ env.container_name }}
+
+          # Remove Docker image
+          docker rmi ${{ env.image }}
 
           echo "status=success" >> ${GITHUB_OUTPUT}
