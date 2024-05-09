@@ -110,12 +110,12 @@ jobs:
           no-cache: false
           platforms: ${{ env.arch_branch }}
           load: false
-          push: false
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
   test:
-    name: test Docker
+    name: Test Docker
     needs: build
     runs-on: ubuntu-latest
     steps:
