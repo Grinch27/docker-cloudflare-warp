@@ -128,6 +128,16 @@ jobs:
       - name: Test Docker image
         id: test
         run: |
-          set -e
-          docker run --rm ${{ env.dockerhub_repo }}:latest warp-cli --version | tee /dev/stderr | grep 'warp-cli'
+          # set -e
+          # docker run --rm ${{ env.dockerhub_repo }}:latest warp-cli --version | tee /dev/stderr | grep 'warp-cli'
+
+          # Run Docker container
+          docker run --name test_container --rm -d ${{ env.dockerhub_repo }}:latest sleep infinity
+
+          # Execute command in Docker container
+          docker exec test_container warp-cli --version | tee /dev/stderr | grep 'warp-cli'
+
+          # Stop Docker container
+          docker stop test_container
+
           echo "status=success" >> ${GITHUB_OUTPUT}
