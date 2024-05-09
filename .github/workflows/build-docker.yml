@@ -21,6 +21,7 @@ env:
   TZ: UTC
   package_app: ${{ inputs.package_app || 'cloudflare-warp' }}
   arch_branch: ${{ inputs.arch_branch || 'linux/amd64,linux/arm64' }}
+  dockerhub_repo: grinch27/cloudflare-warp
 
 jobs:
   build:
@@ -95,7 +96,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@master
         with:
-          images: grinch27/cloudflare-warp
+          images: ${{ env.dockerhub_repo }}
           tags: |
             type=raw,value=latest,enabled=true
             type=raw,value=${{ steps.ver.outputs.version }},enabled=true
@@ -109,17 +110,16 @@ jobs:
           file: ${{ github.workspace }}/Dockerfile
           no-cache: false
           platforms: ${{ env.arch_branch }}
+          load: true
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=local,src=/tmp/.build-cache
-          cache-to: type=local,dest=/tmp/.build-cache
 
       - name: Test Docker image
         id: test
         run: |
           set -e
-          docker run --rm ${{ steps.build.outputs.digest }} warp-cli --version | tee /dev/stderr | grep 'warp-cli'
+          docker run --rm ${{ env.dockerhub_repo }}:latest warp-cli --version | tee /dev/stderr | grep 'warp-cli'
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Push Docker image
@@ -134,5 +134,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=local,src=/tmp/.build-cache
-          cache-to: type=local,dest=/tmp/.build-cache
