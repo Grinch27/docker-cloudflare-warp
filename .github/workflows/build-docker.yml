@@ -103,7 +103,7 @@ jobs:
 
       - name: Build Docker image
         id: build
-        uses: docker/build-push-action@master
+        uses: docker/build-push-action@v2
         with:
           context: .
           file: ${{ github.workspace }}/Dockerfile
@@ -112,6 +112,8 @@ jobs:
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.build-cache
+          cache-to: type=local,dest=/tmp/.build-cache
 
       - name: Test Docker image
         id: test
@@ -123,7 +125,7 @@ jobs:
       - name: Push Docker image
         id: push
         if: ${{ steps.test.outputs.status }} == 'success' && !cancelled()
-        uses: docker/build-push-action@master
+        uses: docker/build-push-action@v2
         with:
           context: .
           file: ${{ github.workspace }}/Dockerfile
@@ -132,11 +134,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Clear workspace
-        working-directory: ${{ github.workspace }}
-        run: |
-          echo -e "Current working directory: $(pwd)"
-          rm -rf ${{ github.workspace }}/*
-          df -hT ${PWD}
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          cache-from: type=local,src=/tmp/.build-cache
+          cache-to: type=local,dest=/tmp/.build-cache
