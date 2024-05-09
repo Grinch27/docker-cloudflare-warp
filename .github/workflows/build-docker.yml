@@ -138,6 +138,9 @@ jobs:
       - name: Get package version
         id: ver
         working-directory: ${{ github.workspace }}
+        env:
+          app: "cloudflare-warp"
+          arch: "amd64"
         run: |
           echo -e "Current working directory: $(pwd)"
 
@@ -150,29 +153,24 @@ jobs:
             lsb-release
 
           # Add cloudflare gpg key
-          OS_ARCH=$(dpkg --print-architecture)
+          # OS_ARCH=$(dpkg --print-architecture)
           OS_VER=$(lsb_release -cs)
           curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-          echo "deb [arch=${OS_ARCH} signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ ${OS_VER} main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ ${OS_VER} main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
           sudo -E apt-get -y -qq update
 
-          # # install
-          # sudo -E apt-get -y -qq install \
-          #   cloudflare-warp
+          # apt-cache
+          apt-cache show ${{ env.app }}
+          apt-cache policy ${{ env.app }}
+          apt-cache showpkg ${{ env.app }}
+          apt-cache depends ${{ env.app }}
+          apt-cache rdepends ${{ env.app }}
+          apt-cache madison ${{ env.app }}
 
-          # # dpkg -l <package-name>:<architecture>
-          # ver_amd64=$(dpkg-query -W -f='${Version}' cloudflare-warp)
-          # # ver_arm64=$(dpkg-query -W -f='${Version}' cloudflare-warp:arm64)
-
-          # # uninstall
-          # sudo -E apt-get -y -qq purge --autoremove \
-          #   cloudflare-warp
-
-          apt-cache policy cloudflare-warp
-          ver_amd64=$(apt-cache policy cloudflare-warp | grep Candidate: | awk '{print $2}')
-
+          # $GITHUB_ENV
+          ver_amd64=$(apt-cache policy ${{ env.app }}:${{ env.arch }} | grep Candidate: | awk '{print $2}')
           echo "version: $ver_amd64"
-          echo "version=$ver_amd64" >> ${GITHUB_OUTPUT} # $GITHUB_ENV
+          echo "version=$ver_amd64" >> ${GITHUB_OUTPUT}
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
