@@ -137,7 +137,7 @@ jobs:
 
       - name: Get package version
         id: ver
-        working-directory: ${{ github.workspace }}
+        working-directory: /
         env:
           app: "cloudflare-warp"
           arch: "amd64"
