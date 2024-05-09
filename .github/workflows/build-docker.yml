@@ -6,125 +6,39 @@ on:
   repository_dispatch:
   workflow_dispatch:
     inputs:
-      tools_branch:
+      package_app:
         description: "Select openwrt branch"
         required: true
-        default: "warp"
-        type: choice
-        options:
-          - warp
-      # device_branch:
-      #   description: "Select device branch"
-      #   required: true
-      #   default: "all"
-      #   type: choice
-      #   options:
-      #     - all
+        default: "cloudflare-warp"
+        type: string
       arch_branch:
         description: "Select arch_branch"
         required: true
-        default: "all"
-        type: choice
-        options:
-          - all
-          - amd64
-          - arm64
+        default: "linux/amd64,linux/arm64"
+        type: string
 
 env:
-  TZ: America/New_York
-  tools_branch: ${{ inputs.tools_branch || 'warp' }}
-  arch_branch: ${{ inputs.arch_branch || 'all' }}
+  TZ: UTC
+  package_app: ${{ inputs.package_app || 'cloudflare-warp' }}
+  arch_branch: ${{ inputs.arch_branch || 'linux/amd64,linux/arm64' }}
 
 jobs:
   build:
     name: Build Docker
-    runs-on: ubuntu-22.04
-    if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    # if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
 
     steps:
-      - name: Clear workspace
-        working-directory: ${{ github.workspace }}
-        run: |
-          echo -e "Current working directory: $(pwd)"
-          rm -rf ${{ github.workspace }}/*
-          df -hT ${PWD}
-          echo "status=success" >> ${GITHUB_OUTPUT}
-
-      # - name: Install cosign
-      #   if: github.event_name != 'pull_request'
-      #   uses: sigstore/cosign-installer@main
-
-      - name: Set environment variable ${{ inputs.arch_branch }}
-        id: var
-        working-directory: /
-        run: |
-          echo -e "Current working directory: $(pwd)"
-
-          # ========== Set repo branch ==========
-          repo_diy="https://github.com/$GITHUB_REPOSITORY"
-          repo_diy_owner="$GITHUB_REPOSITORY_OWNER"
-
-          echo "repo_diy=${repo_diy}" >> "$GITHUB_ENV"
-          echo "repo_diy_owner=${repo_diy_owner}" >> "$GITHUB_ENV"
-
-          # ========== Build Path ==========
-          dir_build="builder"
-          dir_output="output"
-          dir_backup="backup"
-          dir_diy="DIY"
-          # ---------- / ----------
-          path_build="/${dir_build}"
-          path_workspace="${path_build}/${tools_branch}"
-          path_output="${path_build}/${dir_output}"
-          path_backup="${path_build}/${dir_backup}"
-
-          path_diy="${path_workspace}/${dir_diy}"
-
-          echo "path_build=${path_build}" >> "$GITHUB_ENV"
-          echo "path_workspace=${path_workspace}" >> "$GITHUB_ENV"
-          echo "path_output=${path_output}" >> "$GITHUB_ENV"
-          echo "path_backup=${path_backup}" >> "$GITHUB_ENV"
-
-          echo "path_diy=${path_diy}" >> "$GITHUB_ENV"
-
-          # ========== DIY Files ==========
-
-          # ========== END ==========
-          echo "status=success" >> ${GITHUB_OUTPUT}
-
-      - name: Check environment variable
-        id: checkenv
-        working-directory: /
-        run: |
-          echo -e "Current working directory: $(pwd)"
-          echo -e "# ========== Repo Info =========="
-          echo -e "repo_diy: ${repo_diy}"
-          echo -e "repo_diy_owner: ${repo_diy_owner}"
-
-          echo -e "# ========== Build Path =========="
-          echo -e "path_build: ${path_build}"
-          echo -e "path_workspace: ${path_workspace}"
-          echo -e "path_output: ${path_output}"
-          echo -e "path_backup: ${path_backup}"
-          echo -e "path_diy: ${path_diy}"
-
-          # ========== END ==========
-          echo "status=success" >> ${GITHUB_OUTPUT}
-
       - name: Checkout DIY
         uses: actions/checkout@main
-        with:
-          repository: ${{ github.repository }}
-          ref: main
-          fetch-depth: 1
-          # Relative path under $GITHUB_WORKSPACE to place the repository
-          path: ${{ github.event.repository.name }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@master
         with:
-          platforms: linux/amd64,linux/arm64
-          # platforms: ${{ env.arch_branch }}
+          platforms: ${{ env.arch_branch }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@master
@@ -139,8 +53,11 @@ jobs:
         id: ver
         working-directory: /
         env:
-          app: "cloudflare-warp"
-          arch: "amd64"
+          OS_ARCH: "amd64"
+          GPG_KEY_URL: "https://pkg.cloudflareclient.com/pubkey.gpg"
+          KEYRING_FILE: "/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg"
+          SOURCE_LIST_FILE: "/etc/apt/sources.list.d/cloudflare-client.list"
+          PACKAGE_SOURCE_URL: "https://pkg.cloudflareclient.com/"
         run: |
           echo -e "Current working directory: $(pwd)"
 
@@ -152,23 +69,23 @@ jobs:
             gpg \
             lsb-release
 
-          # Add cloudflare gpg key
+          # Add gpg key
           # OS_ARCH=$(dpkg --print-architecture)
           OS_VER=$(lsb_release -cs)
-          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ ${OS_VER} main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+          curl -fsSL ${GPG_KEY_URL} | gpg --yes --dearmor --output ${KEYRING_FILE}
+          echo "deb [signed-by=${KEYRING_FILE}] ${PACKAGE_SOURCE_URL} ${OS_VER} main" | sudo tee ${SOURCE_LIST_FILE}
           sudo -E apt-get -y -qq update
 
           # apt-cache
-          apt-cache show ${{ env.app }}
-          apt-cache policy ${{ env.app }}
-          apt-cache showpkg ${{ env.app }}
-          apt-cache depends ${{ env.app }}
-          apt-cache rdepends ${{ env.app }}
-          apt-cache madison ${{ env.app }}
+          apt-cache show ${{ env.package_app }}
+          apt-cache policy ${{ env.package_app }}
+          apt-cache showpkg ${{ env.package_app }}
+          apt-cache depends ${{ env.package_app }}
+          apt-cache rdepends ${{ env.package_app }}
+          apt-cache madison ${{ env.package_app }}
 
           # $GITHUB_ENV
-          ver_amd64=$(apt-cache policy ${{ env.app }}:${{ env.arch }} | grep Candidate: | awk '{print $2}')
+          ver_amd64=$(apt-cache policy ${{ env.package_app }}:${{ env.OS_ARCH }} | grep Candidate: | awk '{print $2}')
           echo "version: $ver_amd64"
           echo "version=$ver_amd64" >> ${GITHUB_OUTPUT}
 
@@ -184,18 +101,37 @@ jobs:
             type=raw,value=${{ steps.ver.outputs.version }},enabled=true
           flavor: latest=false
 
-      - name: Build and push Docker image
+      - name: Build Docker image
+        id: build
         uses: docker/build-push-action@master
         with:
           context: .
-          file: ${{ github.workspace }}/${{ github.event.repository.name }}/Dockerfile
+          file: ${{ github.workspace }}/Dockerfile
           no-cache: false
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ env.arch_branch }}
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Test Docker image
+        id: test
+        run: |
+          set -e
+          docker run --rm ${{ steps.build.outputs.digest }} warp-cli --version | tee /dev/stderr | grep 'warp-cli'
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Push Docker image
+        id: push
+        if: ${{ steps.test.outputs.status }} == 'success' && !cancelled()
+        uses: docker/build-push-action@master
+        with:
+          context: .
+          file: ${{ github.workspace }}/Dockerfile
+          no-cache: false
+          platforms: ${{ env.arch_branch }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # build-args: |
-          #
 
       - name: Clear workspace
         working-directory: ${{ github.workspace }}
