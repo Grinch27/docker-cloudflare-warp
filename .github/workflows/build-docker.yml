@@ -6,6 +6,11 @@ on:
   repository_dispatch:
   workflow_dispatch:
     inputs:
+      path_dockerfile:
+        description: "dockerfile path in repo"
+        required: true
+        default: "Dockerfile"
+        type: string
       package_app:
         description: "Input package"
         required: true
@@ -24,6 +29,7 @@ on:
 
 env:
   TZ: UTC
+  path_dockerfile: ${{ inputs.path_dockerfile || 'Dockerfile' }}
   package_app: ${{ inputs.package_app || 'cloudflare-warp' }}
   arch_branch: ${{ inputs.arch_branch || 'linux/amd64,linux/arm64' }}
   dockerhub_repo: ${{ inputs.dockerhub_repo || 'grinch27/cloudflare-warp' }}
@@ -111,7 +117,7 @@ jobs:
         uses: docker/build-push-action@master
         with:
           context: .
-          file: ${{ github.workspace }}/Dockerfile
+          file: ${{ github.workspace }}/${{ env.path_dockerfile }}
           no-cache: false
           platforms: ${{ env.arch_branch }}
           load: false
