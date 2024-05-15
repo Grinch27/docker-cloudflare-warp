@@ -1,8 +1,8 @@
 name: Build Docker (dev)
 
 on:
-  schedule:
-    - cron: "0 0 * * *"
+  # schedule:
+  #   - cron: "0 0 * * *"
   repository_dispatch:
   workflow_dispatch:
     inputs:
@@ -35,11 +35,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    services:
-      registry:
-        image: registry:latest
-        ports:
-          - 5000:5000
     strategy:
       matrix:
         arch: ["linux/amd64", "linux/arm64"]
@@ -117,22 +112,32 @@ jobs:
             type=raw,value=${{ steps.ver.outputs.version }},enabled=true
           flavor: latest=false
 
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
       - name: Build Docker image
         id: build
-        uses: docker/build-push-action@master
+        uses: docker/build-push-action@v2
         with:
           context: .
           file: ${{ github.workspace }}/${{ env.path_dockerfile }}
           no-cache: false
           platforms: ${{ matrix.arch }}
           load: true
-          push: true
-          tags: localhost:5000/${{ env.dockerhub_repo }}
+          push: false
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+          tags: ${{ env.dockerhub_repo }}:${{ matrix.arch }}
 
       - name: Test Docker image
         id: test
         env:
-          image: localhost:5000/${{ env.dockerhub_repo }}
+          image: ${{ env.dockerhub_repo }}:${{ matrix.arch }}
           container_name: ${{ env.package_app }}
         run: |
           # Run Docker container
@@ -155,23 +160,15 @@ jobs:
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      # - name: Push Docker image to Docker Hub
-      #   if: steps.test.outputs.status == 'success'
-      #   uses: docker/build-push-action@master
-      #   with:
-      #     context: .
-      #     file: ${{ github.workspace }}/${{ env.path_dockerfile }}
-      #     no-cache: false
-      #     platforms: ${{ matrix.arch }}
-      #     load: false
-      #     push: true
-      #     tags: ${{ env.dockerhub_repo }}:${{ matrix.arch }}
-
       - name: Push Docker image to Docker Hub
         if: steps.test.outputs.status == 'success'
-        env:
-          image: localhost:5000/${{ env.dockerhub_repo }}
-        run: |
-          docker tag ${{ env.image }} ${{ env.dockerhub_repo }}
-          docker push ${{ env.dockerhub_repo }}
-          docker rmi ${{ env.image }}
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ${{ github.workspace }}/${{ env.path_dockerfile }}
+          no-cache: false
+          platforms: ${{ matrix.arch }}
+          load: false
+          push: true
+          cache-from: type=local,src=/tmp/.buildx-cache
+          tags: ${{ env.dockerhub_repo }}:${{ matrix.arch }}
