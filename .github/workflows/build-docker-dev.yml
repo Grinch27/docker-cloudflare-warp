@@ -127,12 +127,12 @@ jobs:
           platforms: ${{ matrix.arch }}
           load: true
           push: true
-          tags: localhost:5000/${{ env.dockerhub_repo }}:${{ matrix.arch }}
+          tags: localhost:5000/${{ env.dockerhub_repo }}
 
       - name: Test Docker image
         id: test
         env:
-          image: localhost:5000/${{ env.dockerhub_repo }}:${{ matrix.arch }}
+          image: localhost:5000/${{ env.dockerhub_repo }}
           container_name: ${{ env.package_app }}
         run: |
           # Run Docker container
