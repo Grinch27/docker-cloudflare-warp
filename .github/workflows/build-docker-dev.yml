@@ -155,20 +155,20 @@ jobs:
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: Push Docker image to Docker Hub
-        if: steps.test.outputs.status == 'success'
-        uses: docker/build-push-action@master
-        with:
-          context: .
-          file: ${{ github.workspace }}/${{ env.path_dockerfile }}
-          no-cache: false
-          platforms: ${{ matrix.arch }}
-          load: false
-          push: true
-          tags: ${{ env.dockerhub_repo }}:${{ matrix.arch }}
-
       # - name: Push Docker image to Docker Hub
       #   if: steps.test.outputs.status == 'success'
-      #   run: |
-      #     docker tag localhost:5000/${{ env.dockerhub_repo }}:${{ matrix.arch }} ${{ env.dockerhub_repo }}:${{ matrix.arch }}
-      #     docker push ${{ env.dockerhub_repo }}:${{ matrix.arch }}
+      #   uses: docker/build-push-action@master
+      #   with:
+      #     context: .
+      #     file: ${{ github.workspace }}/${{ env.path_dockerfile }}
+      #     no-cache: false
+      #     platforms: ${{ matrix.arch }}
+      #     load: false
+      #     push: true
+      #     tags: ${{ env.dockerhub_repo }}:${{ matrix.arch }}
+
+      - name: Push Docker image to Docker Hub
+        if: steps.test.outputs.status == 'success'
+        run: |
+          docker tag localhost:5000/${{ env.dockerhub_repo }} ${{ env.dockerhub_repo }}
+          docker push ${{ env.dockerhub_repo }}
