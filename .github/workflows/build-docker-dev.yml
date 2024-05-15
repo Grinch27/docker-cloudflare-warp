@@ -151,7 +151,7 @@ jobs:
 
           # Stop Docker container & Remove Docker image
           docker stop ${{ env.container_name }}
-          docker rmi ${{ env.image }}
+          # docker rmi ${{ env.image }}
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
@@ -169,6 +169,9 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         if: steps.test.outputs.status == 'success'
+        env:
+          image: localhost:5000/${{ env.dockerhub_repo }}
         run: |
-          docker tag localhost:5000/${{ env.dockerhub_repo }} ${{ env.dockerhub_repo }}
+          docker tag ${{ env.image }} ${{ env.dockerhub_repo }}
           docker push ${{ env.dockerhub_repo }}
+          docker rmi ${{ env.image }}
