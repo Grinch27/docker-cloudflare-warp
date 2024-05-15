@@ -166,3 +166,9 @@ jobs:
           load: false
           push: true
           tags: ${{ env.dockerhub_repo }}:${{ matrix.arch }}
+
+      # - name: Push Docker image to Docker Hub
+      #   if: steps.test.outputs.status == 'success'
+      #   run: |
+      #     docker tag localhost:5000/${{ env.dockerhub_repo }}:${{ matrix.arch }} ${{ env.dockerhub_repo }}:${{ matrix.arch }}
+      #     docker push ${{ env.dockerhub_repo }}:${{ matrix.arch }}
