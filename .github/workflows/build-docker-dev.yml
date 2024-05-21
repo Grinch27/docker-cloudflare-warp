@@ -90,7 +90,7 @@ jobs:
           file: ${{ github.workspace }}/${{ env.path_dockerfile }}
           no-cache: false
           platforms: ${{ env.arch_branch }}
-          load: true
+          load: false
           push: true
           tags: localhost:5000/${{ env.dockerhub_repo }}:latest
           # labels: ${{ steps.meta.outputs.labels }}
