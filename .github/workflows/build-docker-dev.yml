@@ -1,4 +1,4 @@
-name: Build Docker
+name: Build Docker (Dev)
 
 on:
   schedule:
@@ -60,13 +60,13 @@ jobs:
         with:
           driver-opts: network=host
 
-      - name: Cache Docker layers
-        uses: actions/cache@main
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+      # - name: Cache Docker layers
+      #   uses: actions/cache@main
+      #   with:
+      #     path: /tmp/.buildx-cache
+      #     key: ${{ runner.os }}-buildx-${{ github.sha }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-buildx-
 
       # - name: Log in to Docker Hub
       #   uses: docker/login-action@master
