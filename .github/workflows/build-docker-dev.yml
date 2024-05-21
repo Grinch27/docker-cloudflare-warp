@@ -35,8 +35,8 @@ env:
   dockerhub_repo: ${{ inputs.dockerhub_repo || 'grinch27/cloudflare-warp' }}
 
 jobs:
-  build_test_push:
-    name: Build, Test and Push Docker
+  build:
+    name: Build Docker
     runs-on: ubuntu-latest
     permissions:
       contents: write
