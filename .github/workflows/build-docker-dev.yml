@@ -93,7 +93,7 @@ jobs:
           load: true
           push: true
           tags: localhost:5000/${{ env.dockerhub_repo }}:latest
-          labels: ${{ steps.meta.outputs.labels }}
+          # labels: ${{ steps.meta.outputs.labels }}
 
       - name: Inspect
         run: |
@@ -127,7 +127,7 @@ jobs:
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: Tag and push Docker image
-        run: |
-          docker tag localhost:5000/${{ env.dockerhub_repo }}:latest ${{ env.dockerhub_repo }}:latest
-          docker push ${{ env.dockerhub_repo }}:latest
+      # - name: Tag and push Docker image
+      #   run: |
+      #     docker tag localhost:5000/${{ env.dockerhub_repo }}:latest ${{ env.dockerhub_repo }}:latest
+      #     docker push ${{ env.dockerhub_repo }}:latest
