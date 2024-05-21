@@ -41,11 +41,11 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    services:
-      registry:
-        image: registry:latest
-        ports:
-          - 5000:5000
+    # services:
+    #   registry:
+    #     image: registry:latest
+    #     ports:
+    #       - 5000:5000
     steps:
       - name: Checkout DIY
         uses: actions/checkout@main
