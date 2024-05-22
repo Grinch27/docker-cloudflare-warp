@@ -95,7 +95,9 @@ jobs:
           docker exec ${{ env.container_name }} dpkg -l
 
           # Execute command in Docker container
-          docker exec ${{ env.container_name }} warp-cli --version | tee /dev/stderr | grep 'warp-cli'
+          version=$(docker exec ${{ env.container_name }} warp-cli --version | grep 'warp-cli' | awk '{print $2}')
+          echo "version=$version"
+          echo "version=$version" >> ${GITHUB_OUTPUT}
 
           # Stop Docker container
           docker stop ${{ env.container_name }}
@@ -105,52 +107,13 @@ jobs:
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      # - name: Tag and push Docker image
-      #   run: |
-      #     docker tag localhost:5000/${{ env.dockerhub_repo }}:latest ${{ env.dockerhub_repo }}:latest
-      #     docker push ${{ env.dockerhub_repo }}:latest
-
-# Run docker buildx imagetools inspect localhost:5000/grinch27/cloudflare-warp:latest
-# docker buildx imagetools inspect localhost:5000/grinch27/cloudflare-warp:latest
-# docker pull localhost:5000/grinch27/cloudflare-warp:latest
-# shell: /usr/bin/bash -e {0}
-# env:
-# TZ: UTC
-# path_dockerfile: Dockerfile
-# package_app: cloudflare-warp
-# arch_branch: linux/amd64,linux/arm64
-# dockerhub_repo: grinch27/cloudflare-warp
-# Name: localhost:5000/grinch27/cloudflare-warp:latest
-# MediaType: application/vnd.oci.image.index.v1+json
-# Digest: sha256:97c5b53c98a46cbf399a49a8d3ab01b44d095984f033c664ec329b8b42a701cf
-# Manifests:
-# Name: localhost:5000/grinch27/cloudflare-warp:latest@sha256:44c71287598d1bdae10ee94504d17d7e7ac13dfecd4aa098fa35d3fce1cf58a7
-# MediaType: application/vnd.oci.image.manifest.v1+json
-# Platform: linux/amd64
-# Name: localhost:5000/grinch27/cloudflare-warp:latest@sha256:90c38f3ae6248d9b455a10d267e514a06fc41f1bb734789b5d57b8c11ca3b4bb
-# MediaType: application/vnd.oci.image.manifest.v1+json
-# Platform: linux/arm64
-# Name: localhost:5000/grinch27/cloudflare-warp:latest@sha256:829e62e5e700750e3761811e29ba7faa4c763fcaf08818e72c3dff8dc624bd48
-# MediaType: application/vnd.oci.image.manifest.v1+json
-# Platform: unknown/unknown
-# Annotations:
-# vnd.docker.reference.digest: sha256:44c71287598d1bdae10ee94504d17d7e7ac13dfecd4aa098fa35d3fce1cf58a7
-# vnd.docker.reference.type: attestation-manifest
-# Name: localhost:5000/grinch27/cloudflare-warp:latest@sha256:e5556459743e462305267688f0458fbfd9c12da9cf6b9b70a77eb897fcd33f78
-# MediaType: application/vnd.oci.image.manifest.v1+json
-# Platform: unknown/unknown
-# Annotations:
-# vnd.docker.reference.digest: sha256:90c38f3ae6248d9b455a10d267e514a06fc41f1bb734789b5d57b8c11ca3b4bb
-# vnd.docker.reference.type: attestation-manifest
-# latest: Pulling from grinch27/cloudflare-warp
-# 09f376ebb190: Pulling fs layer
-# 701478fdcf54: Pulling fs layer
-# 09f376ebb190: Verifying Checksum
-# 09f376ebb190: Download complete
-# 701478fdcf54: Verifying Checksum
-# 701478fdcf54: Download complete
-# 09f376ebb190: Pull complete
-# 701478fdcf54: Pull complete
-# Digest: sha256:97c5b53c98a46cbf399a49a8d3ab01b44d095984f033c664ec329b8b42a701cf
-# Status: Downloaded newer image for localhost:5000/grinch27/cloudflare-warp:latest
-# localhost:5000/grinch27/cloudflare-warp:latest
+      - name: Tag and push Docker image with version and architecture
+        env:
+          version: ${{ steps.test.outputs.version }}
+          ARCH_BRANCH: ${{ env.arch_branch }}
+        run: |
+          for arch in ${ARCH_BRANCH//,/ }
+          do
+            docker tag localhost:5000/${{ env.dockerhub_repo }}:latest localhost:5000/${{ env.dockerhub_repo }}:${{ env.version }}-$arch
+            docker push localhost:5000/${{ env.dockerhub_repo }}:${{ env.version }}-$arch
+          done
