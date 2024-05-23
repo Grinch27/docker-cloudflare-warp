@@ -26,11 +26,11 @@ on:
         required: true
         default: "dev"
         type: string
-      version:
-        description: "version"
-        required: false
-        default: "dev"
-        type: string
+      # version:
+      #   description: "version"
+      #   required: false
+      #   default: "dev"
+      #   type: string
 
 env:
   TZ: UTC
@@ -38,7 +38,7 @@ env:
   arch_branch: ${{ inputs.arch_branch || 'linux/amd64,linux/arm64' }}
   repo_dockerhub: ${{ inputs.repo_dockerhub || 'grinch27/cloudflare-warp' }}
   tag: ${{ inputs.tag || 'dev' }}
-  version: ${{ inputs.version }}
+  # version: ${{ inputs.version }}
 
 jobs:
   build:
@@ -81,6 +81,7 @@ jobs:
       - name: Inspect
         run: |
           docker buildx imagetools inspect localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
+
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Test Docker image (amd64)
@@ -101,7 +102,7 @@ jobs:
             /bin/bash -c "uname -a && sleep infinity"
 
           # List all installed packages
-          docker exec ${{ env.container_name }} apt list --installed
+          docker exec ${{ env.container_name }} dpkg -l
 
           # Execute command in Docker container
           version=$(docker exec ${{ env.container_name }} apt policy cloudflare-warp | grep 'Installed:' | awk '{print $2}')
@@ -119,6 +120,7 @@ jobs:
           image: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
           container_name: container-test
           platform: linux/arm64
+          app: cloudflare-warp
         run: |
           # Run Docker container
           docker run \
@@ -133,7 +135,7 @@ jobs:
           docker exec ${{ env.container_name }} dpkg -l
 
           # Execute command in Docker container
-          version=$(docker exec ${{ env.container_name }} warp-cli --version | grep 'warp-cli' | awk '{print $2}')
+          version=$(docker exec ${{ env.container_name }} apt policy cloudflare-warp | grep 'Installed:' | awk '{print $2}')
           echo "version=$version"
           echo "version=$version" >> ${GITHUB_OUTPUT}
 
@@ -142,13 +144,25 @@ jobs:
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
+      - name: Check version consistency
+        id: version-check
+        env:
+          version_amd64: ${{ steps.test-amd64.outputs.version }}
+          version_arm64: ${{ steps.test-arm64.outputs.version }}
+        run: |
+          if [ "$version_amd64" = "$version_arm64" ]; then
+            echo "version=$version_amd64" >> ${GITHUB_OUTPUT}
+            echo "status=success" >> ${GITHUB_OUTPUT}
+          fi
+
       - name: Log in to Docker Hub
         uses: docker/login-action@master
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push image to Docker Hub
+      - name: Push image to Docker Hub (tag)
+        id: push-tag
         run: |
           # Create multi-architecture Docker image
           docker buildx imagetools create --tag ${{ env.repo_dockerhub }}:${{ env.tag }} localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
@@ -156,13 +170,14 @@ jobs:
           # Push multi-architecture Docker image
           docker buildx imagetools push ${{ env.repo_dockerhub }}:${{ env.tag }}
 
-      # - name: Tag and push Docker image with version and architecture
-      #   env:
-      #     version: ${{ steps.test.outputs.version }}
-      #     ARCH_BRANCH: ${{ env.arch_branch }}
-      #   run: |
-      #     for arch in ${ARCH_BRANCH//,/ }
-      #     do
-      #       docker tag localhost:5000/${{ env.repo_dockerhub }}:latest localhost:5000/${{ env.repo_dockerhub }}:${{ env.version }}-$arch
-      #       docker push localhost:5000/${{ env.repo_dockerhub }}:${{ env.version }}-$arch
-      #     done
+      - name: Push image to Docker Hub (version)
+        id: push-version
+        if: ${{ steps.version-check.outputs.status }} == 'success' && !cancelled()
+        env:
+          version: ${{ steps.version-check.outputs.version }}
+        run: |
+          # Create multi-architecture Docker image with version tag
+          docker buildx imagetools create --tag ${{ env.repo_dockerhub }}:${{ env.version }} localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
+
+          # Push multi-architecture Docker image with version tag
+          docker buildx imagetools push ${{ env.repo_dockerhub }}:${{ env.version }}
