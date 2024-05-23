@@ -101,10 +101,10 @@ jobs:
             /bin/bash -c "uname -a && sleep infinity"
 
           # List all installed packages
-          docker exec ${{ env.container_name }} apt-cache policy
+          docker exec ${{ env.container_name }} apt list --installed
 
           # Execute command in Docker container
-          version=$(docker exec ${{ env.container_name }} apt policy cloudflare-warp | grep 'Installed:')
+          version=$(docker exec ${{ env.container_name }} apt policy cloudflare-warp | grep 'Installed:' | awk '{print $2}')
           echo "version=$version"
           echo "version=$version" >> ${GITHUB_OUTPUT}
 
