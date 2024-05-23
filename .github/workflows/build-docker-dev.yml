@@ -81,12 +81,6 @@ jobs:
       - name: Inspect
         run: |
           docker buildx imagetools inspect localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
-
-          # docker pull localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
-          for arch in ${arch_branch//,/ }
-          do
-            docker pull localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}-$arch
-          done
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Test Docker image (amd64)
