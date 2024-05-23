@@ -92,9 +92,10 @@ jobs:
       - name: Test Docker image (amd64)
         id: test-amd64
         env:
-          image: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
           container_name: container-test
+          image: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
           platform: linux/amd64
+          app: cloudflare-warp
         run: |
           # Run Docker container
           docker run \
@@ -106,10 +107,10 @@ jobs:
             /bin/bash -c "uname -a && sleep infinity"
 
           # List all installed packages
-          docker exec ${{ env.container_name }} dpkg -l
+          docker exec ${{ env.container_name }} apt-cache policy
 
           # Execute command in Docker container
-          version=$(docker exec ${{ env.container_name }} warp-cli --version | grep 'warp-cli' | awk '{print $2}')
+          version=$(docker exec ${{ env.container_name }} apt policy cloudflare-warp | grep 'Installed:')
           echo "version=$version"
           echo "version=$version" >> ${GITHUB_OUTPUT}
 
