@@ -11,32 +11,38 @@ on:
         required: true
         default: "Dockerfile"
         type: string
-      package_app:
-        description: "Input package"
-        required: true
-        default: "cloudflare-warp"
-        type: string
       arch_branch:
         description: "Input arch"
         required: true
         default: "linux/amd64,linux/arm64"
         type: string
-      dockerhub_repo:
+      repo_dockerhub:
         description: "Docker Hub repository"
         required: true
         default: "grinch27/cloudflare-warp"
+        type: string
+      tag:
+        description: "tag"
+        required: true
+        default: "dev"
+        type: string
+      version:
+        description: "version"
+        required: false
+        default: "dev"
         type: string
 
 env:
   TZ: UTC
   path_dockerfile: ${{ inputs.path_dockerfile || 'Dockerfile' }}
-  package_app: ${{ inputs.package_app || 'cloudflare-warp' }}
   arch_branch: ${{ inputs.arch_branch || 'linux/amd64,linux/arm64' }}
-  dockerhub_repo: ${{ inputs.dockerhub_repo || 'grinch27/cloudflare-warp' }}
+  repo_dockerhub: ${{ inputs.repo_dockerhub || 'grinch27/cloudflare-warp' }}
+  tag: ${{ inputs.tag || 'dev' }}
+  version: ${{ inputs.version }}
 
 jobs:
   build:
-    name: Build Docker
+    name: Build Docker Image
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -69,19 +75,19 @@ jobs:
           platforms: ${{ env.arch_branch }}
           load: false
           push: true
-          tags: localhost:5000/${{ env.dockerhub_repo }}:latest
+          tags: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
           # labels: ${{ steps.meta.outputs.labels }}
 
       - name: Inspect
         run: |
-          docker buildx imagetools inspect localhost:5000/${{ env.dockerhub_repo }}:latest
-          docker pull localhost:5000/${{ env.dockerhub_repo }}:latest
+          docker buildx imagetools inspect localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
+          docker pull localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
 
       - name: Test Docker image
         id: test
         env:
-          image: localhost:5000/${{ env.dockerhub_repo }}:latest
-          container_name: ${{ env.package_app }}
+          image: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
+          container_name: container-test
         run: |
           # docker run --name ${{ env.container_name }} --rm -d ${{ env.image }} sleep infinity
           docker run \
@@ -107,13 +113,24 @@ jobs:
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: Tag and push Docker image with version and architecture
-        env:
-          version: ${{ steps.test.outputs.version }}
-          ARCH_BRANCH: ${{ env.arch_branch }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker image
         run: |
-          for arch in ${ARCH_BRANCH//,/ }
-          do
-            docker tag localhost:5000/${{ env.dockerhub_repo }}:latest localhost:5000/${{ env.dockerhub_repo }}:${{ env.version }}-$arch
-            docker push localhost:5000/${{ env.dockerhub_repo }}:${{ env.version }}-$arch
-          done
+          docker tag localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }} ${{ env.repo_dockerhub }}:${{ env.tag }}
+          docker push ${{ env.repo_dockerhub }}:${{ env.tag }}
+
+      # - name: Tag and push Docker image with version and architecture
+      #   env:
+      #     version: ${{ steps.test.outputs.version }}
+      #     ARCH_BRANCH: ${{ env.arch_branch }}
+      #   run: |
+      #     for arch in ${ARCH_BRANCH//,/ }
+      #     do
+      #       docker tag localhost:5000/${{ env.repo_dockerhub }}:latest localhost:5000/${{ env.repo_dockerhub }}:${{ env.version }}-$arch
+      #       docker push localhost:5000/${{ env.repo_dockerhub }}:${{ env.version }}-$arch
+      #     done
