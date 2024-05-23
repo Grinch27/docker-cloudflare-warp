@@ -1,8 +1,8 @@
 name: Build Docker (Dev)
 
 on:
-  schedule:
-    - cron: "0 0 * * *"
+  # schedule:
+  #   - cron: "0 0 * * *"
   repository_dispatch:
   workflow_dispatch:
     inputs:
@@ -33,12 +33,12 @@ on:
       #   type: string
 
 env:
-  TZ: UTC
   path_dockerfile: ${{ inputs.path_dockerfile || 'Dockerfile' }}
   arch_branch: ${{ inputs.arch_branch || 'linux/amd64,linux/arm64' }}
   repo_dockerhub: ${{ inputs.repo_dockerhub || 'grinch27/cloudflare-warp' }}
   tag: ${{ inputs.tag || 'dev' }}
   # version: ${{ inputs.version }}
+  app: cloudflare-warp
 
 jobs:
   build:
@@ -76,83 +76,56 @@ jobs:
           load: false
           push: true
           tags: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
-          # labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Inspect
+      - name: Test Docker image and check version consistency
+        id: test
+        env:
+          image: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
+          container_name: container-test
         run: |
+          # Inspect Docker image
           docker buildx imagetools inspect localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
 
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          # Read platform information from environment variables
+          IFS=',' read -ra platforms <<< "${{ env.arch_branch }}"
 
-      - name: Test Docker image (amd64)
-        id: test-amd64
-        env:
-          container_name: container-test
-          image: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
-          platform: linux/amd64
-          app: cloudflare-warp
-        run: |
-          # Run Docker container
-          docker run \
-            --name ${{ env.container_name }} \
-            --rm \
-            --detach \
-            --platform ${{ env.platform }} \
-            ${{ env.image }} \
-            /bin/bash -c "uname -a && sleep infinity"
+          # Initialize an associative array to store version information
+          declare -A versions
 
-          # List all installed packages
-          docker exec ${{ env.container_name }} dpkg -l
+          # Test Docker container for each platform
+          for platform in "${platforms[@]}"; do
+            echo "========== Testing Docker container for platform: $platform =========="
+            docker run \
+              --name ${{ env.container_name }} \
+              --rm \
+              --detach \
+              --platform $platform \
+              ${{ env.image }} \
+              /bin/bash -c "uname -a && sleep infinity"
 
-          # Execute command in Docker container
-          version=$(docker exec ${{ env.container_name }} apt policy cloudflare-warp | grep 'Installed:' | awk '{print $2}')
-          echo "version=$version"
-          echo "version=$version" >> ${GITHUB_OUTPUT}
+            # List all installed packages
+            docker exec ${{ env.container_name }} dpkg -l
 
-          # Stop Docker container
-          docker stop ${{ env.container_name }}
+            # Execute command in Docker container to get version information
+            version=$(docker exec ${{ env.container_name }} apt policy ${{ env.app }} | grep 'Installed:' | awk '{print $2}')
 
-          echo "status=success" >> ${GITHUB_OUTPUT}
+            # Store version information in the associative array
+            versions[$version]=1
 
-      - name: Test Docker image (arm64)
-        id: test-arm64
-        env:
-          image: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
-          container_name: container-test
-          platform: linux/arm64
-          app: cloudflare-warp
-        run: |
-          # Run Docker container
-          docker run \
-            --name ${{ env.container_name }} \
-            --rm \
-            --detach \
-            --platform ${{ env.platform }} \
-            ${{ env.image }} \
-            /bin/bash -c "uname -a && sleep infinity"
+            # Stop Docker container
+            docker stop ${{ env.container_name }}
+          done
 
-          # List all installed packages
-          docker exec ${{ env.container_name }} dpkg -l
+          # Get all unique version information
+          unique_versions=$(IFS=','; echo "${!versions[*]}")
+          echo "version=$unique_versions" >> ${GITHUB_OUTPUT}
 
-          # Execute command in Docker container
-          version=$(docker exec ${{ env.container_name }} apt policy cloudflare-warp | grep 'Installed:' | awk '{print $2}')
-          echo "version=$version"
-          echo "version=$version" >> ${GITHUB_OUTPUT}
-
-          # Stop Docker container
-          docker stop ${{ env.container_name }}
-
-          echo "status=success" >> ${GITHUB_OUTPUT}
-
-      - name: Check version consistency
-        id: version-check
-        env:
-          version_amd64: ${{ steps.test-amd64.outputs.version }}
-          version_arm64: ${{ steps.test-arm64.outputs.version }}
-        run: |
-          if [ "$version_amd64" = "$version_arm64" ]; then
-            echo "version=$version_amd64" >> ${GITHUB_OUTPUT}
+          # Check version consistency
+          IFS=',' read -ra version_array <<< "$unique_versions"
+          if [ "${#version_array[@]}" -eq 1 ]; then
             echo "status=success" >> ${GITHUB_OUTPUT}
+          else
+            echo "status=failure" >> ${GITHUB_OUTPUT}
           fi
 
       - name: Log in to Docker Hub
@@ -162,7 +135,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Push image to Docker Hub (tag)
-        id: push-tag
+        id: dockerhub-tag
         run: |
           # Create multi-architecture Docker image
           docker buildx imagetools create --tag ${{ env.repo_dockerhub }}:${{ env.tag }} localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
@@ -171,13 +144,39 @@ jobs:
           docker buildx imagetools push ${{ env.repo_dockerhub }}:${{ env.tag }}
 
       - name: Push image to Docker Hub (version)
-        id: push-version
-        if: ${{ steps.version-check.outputs.status }} == 'success' && !cancelled()
+        id: dockerhub-version
+        if: ${{ steps.test.outputs.status }} == 'success' && !cancelled()
         env:
-          version: ${{ steps.version-check.outputs.version }}
+          version: ${{ steps.test.outputs.version }}
         run: |
           # Create multi-architecture Docker image with version tag
           docker buildx imagetools create --tag ${{ env.repo_dockerhub }}:${{ env.version }} localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
 
           # Push multi-architecture Docker image with version tag
           docker buildx imagetools push ${{ env.repo_dockerhub }}:${{ env.version }}
+
+      - name: Pull and save Docker images
+        id: github-pre
+        working-directory: ${{ github.workspace }}
+        run: |
+          IFS=',' read -ra archs <<< "${{ env.arch_branch }}"
+          for arch in "${archs[@]}"; do
+            docker pull --platform $arch localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
+            filename=${{ env.app }}_$(echo $arch | sed 's/\//_/g')
+            docker save localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }} | gzip > ${filename}.tar.gz
+          done
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Upload Docker images to Release
+        if: ${{ steps.github-pre.outputs.status }} == 'success' && !cancelled()
+        uses: ncipollo/release-action@main
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: "${{ env.app }}"
+          tag: "${{ env.app }}"
+          artifacts: "${{ github.workspace }}/${{ env.app }}_*.tar.gz"
+          allowUpdates: true
+          removeArtifacts: false
+          replacesArtifacts: true
+          body: ""
+          # bodyFile: "${{ env.release_md }}"
