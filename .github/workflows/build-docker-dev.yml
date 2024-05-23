@@ -121,8 +121,11 @@ jobs:
 
       - name: Push Docker image
         run: |
-          docker tag localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }} ${{ env.repo_dockerhub }}:${{ env.tag }}
-          docker push ${{ env.repo_dockerhub }}:${{ env.tag }}
+          # Create multi-architecture Docker image
+          docker buildx imagetools create --tag ${{ env.repo_dockerhub }}:${{ env.tag }} localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
+
+          # Push multi-architecture Docker image
+          docker buildx imagetools push ${{ env.repo_dockerhub }}:${{ env.tag }}
 
       # - name: Tag and push Docker image with version and architecture
       #   env:
