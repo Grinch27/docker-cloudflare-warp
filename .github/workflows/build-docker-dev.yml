@@ -83,17 +83,19 @@ jobs:
           docker buildx imagetools inspect localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
           docker pull localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
 
-      - name: Test Docker image
-        id: test
+      - name: Test Docker image (amd64)
+        id: test-amd64
         env:
           image: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
           container_name: container-test
+          platform: linux/amd64
         run: |
-          # docker run --name ${{ env.container_name }} --rm -d ${{ env.image }} sleep infinity
+          # Run Docker container
           docker run \
             --name ${{ env.container_name }} \
             --rm \
-            -d \
+            --detach \
+            --platform ${{ env.platform }} \
             ${{ env.image }} \
             /bin/bash -c "uname -a && sleep infinity"
 
@@ -108,8 +110,34 @@ jobs:
           # Stop Docker container
           docker stop ${{ env.container_name }}
 
-          # Remove Docker image
-          # docker rmi ${{ env.image }}
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Test Docker image (arm64)
+        id: test-arm64
+        env:
+          image: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
+          container_name: container-test
+          platform: linux/arm64
+        run: |
+          # Run Docker container
+          docker run \
+            --name ${{ env.container_name }} \
+            --rm \
+            --detach \
+            --platform ${{ env.platform }} \
+            ${{ env.image }} \
+            /bin/bash -c "uname -a && sleep infinity"
+
+          # List all installed packages
+          docker exec ${{ env.container_name }} dpkg -l
+
+          # Execute command in Docker container
+          version=$(docker exec ${{ env.container_name }} warp-cli --version | grep 'warp-cli' | awk '{print $2}')
+          echo "version=$version"
+          echo "version=$version" >> ${GITHUB_OUTPUT}
+
+          # Stop Docker container
+          docker stop ${{ env.container_name }}
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
@@ -119,7 +147,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push Docker image
+      - name: Push image to Docker Hub
         run: |
           # Create multi-architecture Docker image
           docker buildx imagetools create --tag ${{ env.repo_dockerhub }}:${{ env.tag }} localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
