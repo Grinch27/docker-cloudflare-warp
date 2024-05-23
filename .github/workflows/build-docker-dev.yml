@@ -95,6 +95,9 @@ jobs:
           # Test Docker container for each platform
           for platform in "${platforms[@]}"; do
             echo "========== Testing Docker container for platform: $platform =========="
+            docker pull --platform $platform localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
+
+            # Run Docker container
             docker run \
               --name ${{ env.container_name }} \
               --rm \
@@ -114,6 +117,10 @@ jobs:
 
             # Stop Docker container
             docker stop ${{ env.container_name }}
+
+            # Save Docker image
+            filename=${{ env.app }}_$(echo $platform | sed 's/\//_/g')_${version}
+            docker save localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }} | gzip > ${{ github.workspace }}/${filename}.tar.gz
           done
 
           # Get all unique version information
@@ -155,20 +162,7 @@ jobs:
           # Push multi-architecture Docker image with version tag
           docker buildx imagetools push ${{ env.repo_dockerhub }}:${{ env.version }}
 
-      - name: Pull and save Docker images
-        id: github-pre
-        working-directory: ${{ github.workspace }}
-        run: |
-          IFS=',' read -ra archs <<< "${{ env.arch_branch }}"
-          for arch in "${archs[@]}"; do
-            docker pull --platform $arch localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
-            filename=${{ env.app }}_$(echo $arch | sed 's/\//_/g')
-            docker save localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }} | gzip > ${filename}.tar.gz
-          done
-          echo "status=success" >> ${GITHUB_OUTPUT}
-
       - name: Upload Docker images to Release
-        if: ${{ steps.github-pre.outputs.status }} == 'success' && !cancelled()
         uses: ncipollo/release-action@main
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
