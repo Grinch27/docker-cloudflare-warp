@@ -39,6 +39,7 @@ env:
   tag: ${{ inputs.tag || 'dev' }}
   # version: ${{ inputs.version }}
   app: cloudflare-warp
+  BASE_IMAGE: debian:bookworm-slim
 
 jobs:
   build:
@@ -66,7 +67,37 @@ jobs:
         with:
           driver-opts: network=host
 
+      - name: Test Base Image
+        id: base
+        env:
+          container_name: base-test
+        run: |
+          # Read platform information from environment variables
+          IFS=',' read -ra platforms <<< "${{ env.arch_branch }}"
+
+          for platform in "${platforms[@]}"; do
+            echo "========== Testing Base Image for platform: $platform =========="
+            docker pull --platform $platform ${{ env.BASE_IMAGE }}
+
+            docker run \
+              --name ${{ env.container_name }} \
+              --rm \
+              --detach \
+              --platform $platform \
+              ${{ env.BASE_IMAGE }} \
+              /bin/bash -c "uname -a && sleep infinity"
+
+            # List all installed packages
+            docker exec ${{ env.container_name }} dpkg --list
+
+            # Stop Docker container
+            docker stop ${{ env.container_name }}
+          done
+
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
       - name: Build and push to local registry
+        id: build
         uses: docker/build-push-action@master
         with:
           context: .
@@ -76,8 +107,10 @@ jobs:
           load: false
           push: true
           tags: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
+          build-args: |
+            BASE_IMAGE=${{ env.BASE_IMAGE }}
 
-      - name: Test Docker image and check version consistency
+      - name: Test Docker image & Check version consistency
         id: test
         env:
           image: localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
@@ -107,7 +140,7 @@ jobs:
               /bin/bash -c "uname -a && sleep infinity"
 
             # List all installed packages
-            docker exec ${{ env.container_name }} dpkg -l
+            docker exec ${{ env.container_name }} dpkg --list
 
             # Execute command in Docker container to get version information
             version=$(docker exec ${{ env.container_name }} apt policy ${{ env.app }} | grep 'Installed:' | awk '{print $2}')

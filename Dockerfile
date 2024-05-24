@@ -1,9 +1,9 @@
 # FROM ubuntu:jammy
-FROM debian:bookworm-slim
+ARG BASE_IMAGE=debian:bookworm-slim
+FROM ${BASE_IMAGE}
 
-# ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update --ignore-missing \
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update --ignore-missing \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
         gpg \
@@ -36,6 +36,7 @@ RUN apt-get update --ignore-missing \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/*.log \
+    && unset DEBIAN_FRONTEND \
     # ENTRYPOINT startapp.sh
     && echo "#!/bin/sh\nservice dbus start\n/bin/warp-svc\n" > /startapp.sh \
     && chmod +x /startapp.sh
