@@ -190,7 +190,7 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git commit -m "Sync Upstream and Overwrite Files"
+          git commit -m "Log dpkg list"
           git push origin ${{ github.ref }}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
