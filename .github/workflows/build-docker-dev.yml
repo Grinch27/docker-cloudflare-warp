@@ -141,28 +141,32 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push image to Docker Hub (tag)
-        id: dockerhub-tag
+      - name: Push image to Docker Hub
+        id: dockerhub
         run: |
-          # Create multi-architecture Docker image
-          docker buildx imagetools create --tag ${{ env.repo_dockerhub }}:${{ env.tag }} localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
+          function push_image {
+            docker_repo=$1
+            docker_tag=$2
 
-          # Push multi-architecture Docker image
-          docker buildx imagetools push ${{ env.repo_dockerhub }}:${{ env.tag }}
+            # Create multi-architecture Docker image
+            docker buildx imagetools create --tag $docker_repo:$docker_tag localhost:5000/$docker_repo:${{ env.tag }}
 
-      - name: Push image to Docker Hub (version)
-        id: dockerhub-version
-        if: ${{ steps.test.outputs.status }} == 'success' && !cancelled()
-        env:
-          version: ${{ steps.test.outputs.version }}
-        run: |
-          # Create multi-architecture Docker image with version tag
-          docker buildx imagetools create --tag ${{ env.repo_dockerhub }}:${{ env.version }} localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
+            # Push multi-architecture Docker image
+            docker buildx imagetools push $docker_repo:$docker_tag
+          }
 
-          # Push multi-architecture Docker image with version tag
-          docker buildx imagetools push ${{ env.repo_dockerhub }}:${{ env.version }}
+          # Push image with tag
+          push_image ${{ env.repo_dockerhub }} ${{ env.tag }}
 
-      - name: Upload Docker images to Release
+          # Push image with version if test is successful and not cancelled
+          if [ "${{ steps.test.outputs.status }}" == "success" ]; then
+            push_image ${{ env.repo_dockerhub }} ${{ steps.test.outputs.version }}
+          fi
+
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Upload Docker images to Github Release
+        id: github
         uses: ncipollo/release-action@main
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
