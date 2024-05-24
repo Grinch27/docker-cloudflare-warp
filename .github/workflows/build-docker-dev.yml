@@ -39,7 +39,7 @@ env:
   tag: ${{ inputs.tag || 'dev' }}
   # version: ${{ inputs.version }}
   app: cloudflare-warp
-  BASE_IMAGE: debian:bookworm-slim
+  BASE_IMAGE: debian:stable-slim
 
 jobs:
   build:
@@ -67,7 +67,7 @@ jobs:
         with:
           driver-opts: network=host
 
-      - name: Test Base Image
+      - name: Test Base Image - ${{ env.BASE_IMAGE }}
         id: base
         env:
           container_name: base-test
@@ -128,6 +128,9 @@ jobs:
           # Test Docker container for each platform
           for platform in "${platforms[@]}"; do
             echo "========== Testing Docker container for platform: $platform =========="
+            filename=${{ env.app }}_$(echo $platform | sed 's/\//_/g')
+
+            # Pull Docker image
             docker pull --platform $platform localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }}
 
             # Run Docker container
@@ -142,6 +145,9 @@ jobs:
             # List all installed packages
             docker exec ${{ env.container_name }} dpkg --list
 
+            # Record Info
+            docker exec ${{ env.container_name }} dpkg --list > ${{ github.workspace }}/${filename}.log
+
             # Execute command in Docker container to get version information
             version=$(docker exec ${{ env.container_name }} apt policy ${{ env.app }} | grep 'Installed:' | awk '{print $2}')
 
@@ -152,8 +158,7 @@ jobs:
             docker stop ${{ env.container_name }}
 
             # Save Docker image
-            filename=${{ env.app }}_$(echo $platform | sed 's/\//_/g')_${version}
-            docker save localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }} | gzip > ${{ github.workspace }}/${filename}.tar.gz
+            docker save localhost:5000/${{ env.repo_dockerhub }}:${{ env.tag }} | gzip > ${{ github.workspace }}/${filename}_${version}.tar.gz
           done
 
           # Get all unique version information
@@ -167,6 +172,26 @@ jobs:
           else
             echo "status=failure" >> ${GITHUB_OUTPUT}
           fi
+
+      - name: Check for changes
+        id: changes
+        working-directory: ${{ github.workspace }}
+        run: |
+          git add ./log
+          git diff --cached --quiet || echo "changed=true" >> ${GITHUB_OUTPUT}
+
+      - name: Commit and push changes
+        id: commit
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: ${{ github.workspace }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git commit -m "Sync Upstream and Overwrite Files"
+          git push origin ${{ github.ref }}
+          echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Log in to Docker Hub
         uses: docker/login-action@master
