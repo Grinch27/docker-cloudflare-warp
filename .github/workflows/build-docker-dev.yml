@@ -146,7 +146,8 @@ jobs:
             docker exec ${{ env.container_name }} dpkg --list
 
             # Record Info
-            docker exec ${{ env.container_name }} dpkg --list > ${{ github.workspace }}/${filename}.log
+            mkdir -p ${{ github.workspace }}/log
+            docker exec ${{ env.container_name }} dpkg --list > ${{ github.workspace }}/log/${filename}.log
 
             # Execute command in Docker container to get version information
             version=$(docker exec ${{ env.container_name }} apt policy ${{ env.app }} | grep 'Installed:' | awk '{print $2}')
