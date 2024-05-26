@@ -184,13 +184,17 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
 
+          # add all changes in ./log to the staging area
           git add --all ./log
+
+          # write changes to changelog.log or output "changed=true"
           git diff --cached >> ./log/changelog.log || echo "changed=true" >> ${GITHUB_OUTPUT}
 
-          git diff --cached
-          git commit -m "Log dpkg list"
-          git push origin ${{ github.ref }}
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          # commit changes if there are any
+          git diff --cached --quiet || git commit -m "Log dpkg list"
+
+          # push changes and output "status=success" if successful
+          git push origin ${{ github.ref }} && echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Log in to Docker Hub
         if: steps.changes.outputs.changed == 'true'
