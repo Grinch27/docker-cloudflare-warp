@@ -31,15 +31,11 @@ on:
       #   required: false
       #   default: "dev"
       #   type: string
-
-env:
-  path_dockerfile: ${{ inputs.path_dockerfile || 'Dockerfile' }}
-  arch_branch: ${{ inputs.arch_branch || 'linux/amd64,linux/arm64' }}
-  repo_dockerhub: ${{ inputs.repo_dockerhub || 'grinch27/cloudflare-warp' }}
-  tag: ${{ inputs.tag || 'dev' }}
-  # version: ${{ inputs.version }}
-  app: cloudflare-warp
-  BASE_IMAGE: debian:stable-slim
+      # push-force:
+      #   description: 'Force to Push'
+      #   required: false
+      #   default: "false"
+      #   type: boolean
 
 jobs:
   build:
@@ -53,8 +49,16 @@ jobs:
         image: registry:latest
         ports:
           - 5000:5000
+    env:
+      path_dockerfile: ${{ inputs.path_dockerfile || 'Dockerfile' }}
+      arch_branch: ${{ inputs.arch_branch || 'linux/amd64,linux/arm64' }}
+      repo_dockerhub: ${{ inputs.repo_dockerhub || 'grinch27/cloudflare-warp' }}
+      tag: ${{ inputs.tag || 'dev' }}
+      # version: ${{ inputs.version }}
+      app: cloudflare-warp
+      BASE_IMAGE: debian:stable-slim
     steps:
-      - name: Checkout DIY
+      - name: Checkout ${{ github.repository }}
         uses: actions/checkout@main
 
       - name: Set up QEMU
