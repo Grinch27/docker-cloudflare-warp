@@ -177,24 +177,23 @@ jobs:
       - name: Check for changes
         id: changes
         working-directory: ${{ github.workspace }}
-        run: |
-          git add ./log
-          git diff --cached --quiet || echo "changed=true" >> ${GITHUB_OUTPUT}
-
-      - name: Commit and push changes
-        id: commit
-        if: steps.changes.outputs.changed == 'true'
-        working-directory: ${{ github.workspace }}
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
         run: |
+          # config git
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
+
+          git add --all ./log
+          git diff --cached >> ./log/changelog.log || echo "changed=true" >> ${GITHUB_OUTPUT}
+
+          git diff --cached
           git commit -m "Log dpkg list"
           git push origin ${{ github.ref }}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Log in to Docker Hub
+        # if: steps.changes.outputs.changed == 'true'
         uses: docker/login-action@master
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
