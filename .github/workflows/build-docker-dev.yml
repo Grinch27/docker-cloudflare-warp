@@ -147,11 +147,11 @@ jobs:
               /bin/bash -c "uname -a && sleep infinity"
 
             # List all installed packages
-            docker exec ${{ env.container_name }} dpkg --list
+            docker exec ${{ env.container_name }} dpkg --get-selections
 
             # Record Info
             mkdir -p ${{ github.workspace }}/log
-            docker exec ${{ env.container_name }} dpkg --list > ${{ github.workspace }}/log/${filename}.log
+            docker exec ${{ env.container_name }} dpkg --get-selections > ${{ github.workspace }}/log/${filename}.log
 
             # Execute command in Docker container to get version information
             version=$(docker exec ${{ env.container_name }} apt policy ${{ env.app }} | grep 'Installed:' | awk '{print $2}')
@@ -183,6 +183,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
+          LOG_CHANGELOG: ${{ github.workspace }}/log/changelog.log
         run: |
           # config git
           git config --global user.name 'github-actions'
@@ -191,8 +192,8 @@ jobs:
           # add all changes in ./log to the staging area
           git add --all ./log
 
-          # write changes to changelog.log or output "changed=true"
-          git diff --cached >> ./log/changelog.log || echo "changed=true" >> ${GITHUB_OUTPUT}
+          # check for changes and output "changed=true" if there are any
+          git diff --cached --quiet || (echo "changed=true" >> ${GITHUB_OUTPUT} && git diff --cached >> ${{ env.LOG_CHANGELOG }})
 
           # commit changes if there are any
           git diff --cached --quiet || git commit -m "Log dpkg list"
@@ -209,7 +210,6 @@ jobs:
 
       - name: Push image to Docker Hub
         if: steps.changes.outputs.changed == 'true'
-        id: dockerhub
         run: |
           function push_image {
             docker_repo=$1
