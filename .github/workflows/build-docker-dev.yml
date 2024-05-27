@@ -147,7 +147,8 @@ jobs:
               /bin/bash -c "uname -a && sleep infinity"
 
             # List all installed packages
-            docker exec ${{ env.container_name }} dpkg --list
+            installed_packages=$(docker exec ${{ env.container_name }} dpkg --list)
+            echo "$installed_packages"
 
             # Record Info
             mkdir -p ${{ github.workspace }}/log
