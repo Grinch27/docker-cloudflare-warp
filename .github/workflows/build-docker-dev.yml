@@ -207,7 +207,7 @@ jobs:
 
             # Get changelog for each package
             jq -r 'keys[]' "$output_file" | while read package; do
-              changelog=$(apt-get changelog $package 2>/dev/null || echo "Changelog not available")
+              changelog=$(apt-get changelog $package 2>/dev/null | head -n 1 || echo "Changelog not available")
               changelog=$(echo "$changelog" | jq -R -s .)
               jq --arg package "$package" --arg changelog "$changelog" \
                 '.[$package].changelog = $changelog' "$temp_file" > "$temp_file.tmp" && mv "$temp_file.tmp" "$temp_file"
