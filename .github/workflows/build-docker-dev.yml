@@ -146,13 +146,11 @@ jobs:
               ${{ env.image }} \
               /bin/bash -c "uname -a && sleep infinity"
 
-            # List all installed packages
-            installed_packages=$(docker exec ${{ env.container_name }} dpkg --list)
-            echo "$installed_packages"
-
-            # Record Info
+            # Ensure the log directory exists
             mkdir -p ${{ github.workspace }}/log
-            docker exec ${{ env.container_name }} dpkg --list > ${{ github.workspace }}/log/${filename}.log
+
+            # List all installed packages, print the output and save it to a log file
+            docker exec ${{ env.container_name }} dpkg --list | tee ${{ github.workspace }}/log/${filename}.log
 
             # Execute command in Docker container to get version information
             version=$(docker exec ${{ env.container_name }} apt policy ${{ env.app }} | grep 'Installed:' | awk '{print $2}')
@@ -169,7 +167,7 @@ jobs:
 
           # Get all unique version information
           unique_versions=$(IFS=','; echo "${!versions[*]}")
-          echo "version=$unique_versions" >> ${GITHUB_OUTPUT}
+          echo "version=$unique_versions" | tee -a ${GITHUB_OUTPUT}
 
           # Check version consistency
           IFS=',' read -ra version_array <<< "$unique_versions"
@@ -178,6 +176,46 @@ jobs:
           else
             echo "status=failure" >> ${GITHUB_OUTPUT}
           fi
+
+      - name: Set up Python
+        uses: actions/setup-python@main
+        with:
+          python-version: "3.x"
+
+      - name: Run Python script
+        working-directory: ${{ github.workspace }}
+        env:
+          LOG_DIR: "./log"
+        run: |
+          python -m pip install --upgrade pip
+          # pip install -r requirements.txt
+
+          # Install jq
+          sudo apt-get install -y jq
+
+          # Process each .log file
+          for file in "$LOG_DIR"/*.log; do
+            # Define a variable for the output file name
+            output_file="packages_${file##*/}.json"
+
+            # dpkg2json
+            python ./python/dpkg2json.py --input "$file" --output "$output_file"
+
+            # Create a temporary file to store the updated JSON
+            temp_file="temp_${file##*/}.json"
+            cp "$output_file" "$temp_file"
+
+            # Get changelog for each package
+            for package in $(jq -r 'keys[]' "$output_file"); do
+              changelog=$(apt-get changelog $package 2>/dev/null || echo "Changelog not available")
+              changelog=$(echo "$changelog" | jq -R -s .)
+              jq --arg package "$package" --arg changelog "$changelog" \
+                '.[$package].changelog = $changelog' "$temp_file" | tee "$temp_file"
+            done
+
+            # Overwrite the original file with the updated JSON
+            mv "$temp_file" "$output_file"
+          done
 
       - name: Check for changes
         id: changes
