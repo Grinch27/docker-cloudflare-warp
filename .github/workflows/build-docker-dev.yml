@@ -215,13 +215,7 @@ jobs:
 
             # Overwrite the original file with the updated JSON
             mv "$temp_file" "$output_file"
-
-            # Query package information
-            echo "Package: $(jq -r '.adduser.Package' "$output_file")"
-            echo "Version: $(jq -r '.adduser.Version' "$output_file")"
-            echo "Architecture: $(jq -r '.adduser.Architecture' "$output_file")"
-            echo "Description: $(jq -r '.adduser.Description' "$output_file")"
-            echo "Changelog: $(jq -r '.adduser.changelog' "$output_file")"
+            cat "$output_file"
           done
 
       - name: Check for changes
