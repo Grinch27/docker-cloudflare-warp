@@ -199,7 +199,7 @@ jobs:
             output_file="packages_${file##*/}.json"
 
             # dpkg2json
-            python ./python/dpkg2json.py --input "$file" --output "$output_file"
+            python python/dpkg2json.py --input "$file" --output "$output_file"
 
             # Create a temporary file to store the updated JSON
             temp_file="temp_${file##*/}.json"
