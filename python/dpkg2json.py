@@ -1,6 +1,7 @@
 import json
 import re
 import argparse
+import os
 
 
 def dpkg_to_json(input_filename, output_filename):
@@ -12,14 +13,21 @@ def dpkg_to_json(input_filename, output_filename):
         if line.startswith("ii"):
             parsed_line_core = re.split(r" {2,}", line)
             if len(parsed_line_core) >= 5:
-                name = parsed_line_core[1]
+                status = parsed_line_core[0]
+                full_name = parsed_line_core[1]
+                if ":" in full_name:
+                    package_name, _ = full_name.split(":")
+                else:
+                    package_name = full_name
                 version = parsed_line_core[2]
                 architecture = parsed_line_core[3]
                 description = parsed_line_core[4].strip()
-                pkgs[name] = {
+                pkgs[full_name] = {
+                    "Package": package_name,
                     "Version": version,
                     "Architecture": architecture,
                     "Description": description,
+                    "Status": status,
                 }
 
     json_output = json.dumps(pkgs, indent=4)
@@ -34,7 +42,11 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--output", type=str, default=None, help="Output file")
     args = parser.parse_args()
 
-    output_filename = args.output if args.output else args.input
+    if args.output:
+        output_filename = args.output
+    else:
+        base_name = os.path.splitext(args.input)[0]
+        output_filename = base_name + ".json"
 
     dpkg_to_json(args.input, output_filename)
     # --input "Z:/cloudflare-warp_linux_amd64.log"
