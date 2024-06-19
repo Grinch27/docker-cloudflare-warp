@@ -201,20 +201,21 @@ jobs:
             # dpkg2json
             python python/dpkg2json.py --input "$file" --output "$output_file"
 
-            # Create a temporary file to store the updated JSON
-            temp_file="temp_${file##*/}.json"
-            cp "$output_file" "$temp_file"
+            # # Create a temporary file to store the updated JSON
+            # temp_file="temp_${file##*/}.json"
+            # cp "$output_file" "$temp_file"
 
-            # Get changelog for each package
-            jq -r 'keys[]' "$output_file" | while read package; do
-              changelog=$(apt-get changelog $package 2>/dev/null | head -n 1 || echo "Changelog not available")
-              changelog=$(echo "$changelog" | jq -R -s .)
-              jq --arg package "$package" --arg changelog "$changelog" \
-                '.[$package].changelog = $changelog' "$temp_file" > "$temp_file.tmp" && mv "$temp_file.tmp" "$temp_file"
-            done
+            # # Get changelog for each package
+            # jq -r 'keys[]' "$output_file" | while read package; do
+            #   changelog=$(apt-get changelog $package 2>/dev/null | head -n 1 || echo "Changelog not available")
+            #   changelog=$(echo "$changelog" | jq -R -s .)
+            #   jq --arg package "$package" --arg changelog "$changelog" \
+            #     '.[$package].changelog = $changelog' "$temp_file" > "$temp_file.tmp" && mv "$temp_file.tmp" "$temp_file"
+            # done
 
-            # Overwrite the original file with the updated JSON
-            mv "$temp_file" "$output_file"
+            # # Overwrite the original file with the updated JSON
+            # mv "$temp_file" "$output_file"
+
             cat "$output_file"
           done
 
