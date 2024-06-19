@@ -231,7 +231,7 @@ jobs:
           git config --global user.email 'github-actions@github.com'
 
           # add all changes in ./log to the staging area
-          git add --all ./log
+          git add --all .
 
           # check for changes and output "changed=true" if there are any
           git diff --cached --quiet || (echo "changed=true" >> ${GITHUB_OUTPUT} && git diff --cached >> ${{ env.LOG_CHANGELOG }})
