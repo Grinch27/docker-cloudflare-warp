@@ -158,6 +158,9 @@ jobs:
             # Store version information in the associative array
             versions[$version]=1
 
+            # Test DNS settings
+            docker exec ${{ env.container_name }} cat /etc/resolv.conf
+
             # Stop Docker container
             docker stop ${{ env.container_name }}
 
@@ -219,6 +222,11 @@ jobs:
             cat "$output_file"
           done
 
+      - name: Set Git user
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+
       - name: Check for changes
         id: changes
         working-directory: ${{ github.workspace }}
@@ -226,21 +234,30 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT }}
           LOG_CHANGELOG: ${{ github.workspace }}/log/changelog.log
         run: |
-          # config git
-          git config --global user.name 'github-actions'
-          git config --global user.email 'github-actions@github.com'
-
           # add all changes in ./log to the staging area
           git add --all .
 
-          # check for changes and output "changed=true" if there are any
-          git diff --cached --quiet || (echo "changed=true" >> ${GITHUB_OUTPUT} && git diff --cached >> ${{ env.LOG_CHANGELOG }})
+          # check for changes
+          if git diff --cached --quiet; then
+            echo "No changes to commit" >> ${GITHUB_OUTPUT}
+          else
+            # commit changes
+            if git commit -m "Log dpkg list"; then
+              echo "commit=success" >> ${GITHUB_OUTPUT}
+              echo "changed=true" >> ${GITHUB_OUTPUT}
+              git diff --cached >> ${{ env.LOG_CHANGELOG }}
 
-          # commit changes if there are any
-          git diff --cached --quiet || git commit -m "Log dpkg list"
-
-          # push changes and output "status=success" if successful
-          git push origin ${{ github.ref }} && echo "status=success" >> ${GITHUB_OUTPUT}
+              # push changes
+              if git push origin ${{ github.ref }}; then
+                echo "push=success" >> ${GITHUB_OUTPUT}
+                echo "status=success" >> ${GITHUB_OUTPUT}
+              else
+                echo "status=failed" >> ${GITHUB_OUTPUT}
+              fi
+            else
+              echo "commit=failed" >> ${GITHUB_OUTPUT}
+            fi
+          fi
 
       - name: Log in to Docker Hub
         if: steps.changes.outputs.changed == 'true'
