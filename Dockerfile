@@ -17,7 +17,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         # nftables \
         # iputils-ping \
         # vim \
-        sudo \
+        # sudo \
         # procps \
     # Add cloudflare gpg key
     && OS_ARCH=$(dpkg --print-architecture) \
