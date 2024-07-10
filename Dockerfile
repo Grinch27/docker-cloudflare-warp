@@ -17,7 +17,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         # nftables \
         # iputils-ping \
         # vim \
-        # sudo \
+        sudo \
         # procps \
     # Add cloudflare gpg key
     && OS_ARCH=$(dpkg --print-architecture) \
@@ -38,7 +38,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && rm -rf /var/log/*.log \
     && unset DEBIAN_FRONTEND \
     # ENTRYPOINT startapp.sh
-    && echo "#!/bin/sh\nservice dbus start\n/bin/warp-svc\n" > /startapp.sh \
+    && echo "#!/bin/sh\nservice dbus start\n/bin/warp-svc\nwarp-cli disconnect --accept-tos" > /startapp.sh \
     && chmod +x /startapp.sh
     
 # ENTRYPOINT ["/bin/warp-svc"]
