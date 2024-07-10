@@ -43,4 +43,4 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && chmod +x /startapp.sh
     
 # ENTRYPOINT ["/bin/warp-svc"]
-ENTRYPOINT ["/startapp.sh"]
+# ENTRYPOINT ["/startapp.sh"]
