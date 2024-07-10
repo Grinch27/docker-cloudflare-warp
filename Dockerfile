@@ -10,7 +10,8 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         curl \
         lsb-release \
         systemd \
-        dbus \
+        # dbus \
+        nano \
         # man \
         # expect \
         # iproute2 \
