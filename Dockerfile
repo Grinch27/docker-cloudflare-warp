@@ -11,7 +11,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         lsb-release \
         systemd \
         # dbus \
-        nano \
+        # nano \
         # man \
         # expect \
         # iproute2 \
